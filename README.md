@@ -57,9 +57,12 @@ dotnet run --project Poe2StashPricer.App -- --overlay
 ```
 
 That follows the game on its own: open a stash tab it has scanned and the prices appear over the items. It
-takes no clicks, so the game still gets all of them. On Hyprland add the window rules from
-[packaging/hyprland.conf](packaging/hyprland.conf), or the compositor will draw its own border and shadow
-around the overlay and let it take focus from the game.
+takes no clicks, so the game still gets all of them.
+
+**On Hyprland the window rules in [packaging/hyprland.lua](packaging/hyprland.lua) are not optional.** Blur
+is on by default, and a compositor blurs whatever sits behind a transparent window - which here is the game,
+so the stash ends up looking washed out. The rules also stop the overlay taking focus, being faded by
+`inactive_opacity`, and getting a border and shadow of its own.
 
 There is no hotkey yet, so a scan still has to be started from the command line.
 
