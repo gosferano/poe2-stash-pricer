@@ -136,6 +136,10 @@ Recorded here so they are not mistaken for porting bugs when comparing with upst
   (`ScanTriggerHeld`), not the scanner's.
 - poe.ninja rate limiting is detected from `HttpResponseMessage.StatusCode` (429/503) and
   `Headers.RetryAfter` instead of `WebException`.
+- The watcher does not drop a recognised tab on the first look that fails to recognise it: the game draws a
+  tab over several frames, so the first capture after it returns to the front can be too dark to match, and
+  upstream's behaviour there made the overlay blink off and on at every alt-tab. Three looks in a row must
+  fail, which is the same idea as the retries upstream already uses in `RecheckFrame`.
 - Upstream refused a poe.ninja answer over 64 MB while reading it into a string. There is no such cap here: the
   answer is parsed straight off the response stream, and `HttpClient.Timeout` bounds how long that can take.
 - The poe.ninja user agent reports this port's name and version, not upstream's.
