@@ -34,6 +34,10 @@ public class StashWatcher
 
     private DateTime _nextDetect = DateTime.MinValue;
     private DateTime _settleUntil = DateTime.MinValue;   // after a change, keep looking every tick until then
+    private int _unrecognised;                           // looks in a row that lost a tab we had
+
+    /// <summary>How many looks in a row may fail to recognise a tab before it is believed to be gone.</summary>
+    private const int LosingATabTakes = 3;
 
     public StashWatcher(IScreenCapture capture, IGameWindow game, IInput input)
     {
@@ -57,6 +61,7 @@ public class StashWatcher
 
     public void Forget()
     {
+        _unrecognised = 0;
         _watcher.Clear();
         Region = Rectangle.Empty;
         StashVisible = false;
@@ -114,6 +119,20 @@ public class StashWatcher
         }
 
         StashSighting seen = new StashSighting { WindowRect = win, Full = full, Loc = loc, Tab = tab, StashVisible = loc.StashVisible };
+        Rectangle regionNow = new Rectangle(win.X + loc.Region.X, win.Y + loc.Region.Y, loc.Region.Width, loc.Region.Height);
+
+        // The game draws a tab over several frames, so the first look after it comes back to the front can be
+        // too dark to recognise. Losing a tab we had is only believed after a few looks in a row: otherwise
+        // the overlay blinks off and on again every time the user switches back into the game. The same idea
+        // as the retries in hover pricing.
+        if (loc.StashVisible && tab == null && model.CurrentTab != null && regionNow == Region
+            && ++_unrecognised < LosingATabTakes)
+        {
+            _nextDetect = DateTime.Now.AddMilliseconds(120);
+            seen.Ignore = true;
+            return seen;
+        }
+        if (tab != null || !loc.StashVisible) _unrecognised = 0;
 
         if (cursorOver && StashVisible)
         {
@@ -129,6 +148,7 @@ public class StashWatcher
                 seen.Ignore = true;
                 return seen;
             }
+            _unrecognised = 0;
         }
 
         StashVisible = loc.StashVisible;

@@ -95,7 +95,7 @@ internal sealed class X11GameWindow : IGameWindow
     public string ForegroundDescription()
     {
         IntPtr[] active = _display.GetWindows(_display.Root, "_NET_ACTIVE_WINDOW");
-        if (active.Length == 0 || active[0] == IntPtr.Zero) return "nothing";
+        if (active.Length == 0 || active[0] == IntPtr.Zero) return "a window that is not an X11 one";
         if (active[0] == _window) return "the game";
         string cls = _display.GetText(active[0], "WM_CLASS") ?? "unknown";
         return cls + " (not the game)";
