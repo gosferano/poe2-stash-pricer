@@ -23,6 +23,7 @@ internal static class Program
         if (Array.IndexOf(args, "--debug-clipboard") >= 0)
             return DebugClipboard.Run(12, Array.IndexOf(args, "--plain") < 0);
 
+        App.OverlayOnly = Array.IndexOf(args, "--overlay") >= 0;
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
     }

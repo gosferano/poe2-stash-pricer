@@ -140,7 +140,7 @@ internal static class X11Errors
     private static readonly object _sync = new object();
     private static readonly X11.ErrorHandler _handler = OnError;
     private static readonly System.Collections.Generic.HashSet<IntPtr> _ours = new System.Collections.Generic.HashSet<IntPtr>();
-    private static X11.ErrorHandler? _previous;
+    private static IntPtr _previous;
     private static bool _installed;
 
     public static void Own(IntPtr display) { lock (_sync) _ours.Add(display); }
@@ -161,9 +161,10 @@ internal static class X11Errors
         lock (_sync)
         {
             if (_installed) return;
-            IntPtr old = X11.XSetErrorHandler(_handler);
-            if (old != IntPtr.Zero)
-                _previous = Marshal.GetDelegateForFunctionPointer<X11.ErrorHandler>(old);
+            // Whatever was installed before is kept as a plain pointer: Avalonia's X11 backend puts its own
+            // managed delegate there, and .NET will not hand that back as a delegate of our type. Calling
+            // through the pointer sidesteps the question of whose delegate it was.
+            _previous = X11.XSetErrorHandler(_handler);
             _installed = true;
         }
     }
@@ -173,8 +174,9 @@ internal static class X11Errors
         // Not our connection (Avalonia's, say): leave it to whoever handled it before us.
         if (!IsOurs(display))
         {
-            X11.ErrorHandler? chain = _previous;
-            return chain != null ? chain(display, ev) : 0;
+            IntPtr chain = _previous;
+            if (chain == IntPtr.Zero) return 0;
+            unsafe { return ((delegate* unmanaged[Cdecl]<IntPtr, IntPtr, int>)chain)(display, ev); }
         }
 
         // XErrorEvent: int type(0); Display *display(8); XID resourceid(16); unsigned long serial(24);

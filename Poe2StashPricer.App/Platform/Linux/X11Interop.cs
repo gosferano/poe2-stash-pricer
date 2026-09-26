@@ -65,6 +65,18 @@ internal static class X11
     [DllImport(Xlib)] public static extern IntPtr XGetSelectionOwner(IntPtr d, ulong selection);
     [DllImport(Xlib)] public static extern int XConnectionNumber(IntPtr d);
 
+    private const string Xext = "libXext.so.6";
+
+    /// <summary>
+    /// Shapes a window's input region. Handing it an empty region makes every click fall through to
+    /// whatever is underneath, which is what an overlay wants: it is drawn over the game but never takes a
+    /// click meant for it.
+    /// </summary>
+    [DllImport(Xext)] public static extern void XShapeCombineRectangles(IntPtr d, IntPtr w, int kind, int xOff, int yOff,
+                                                                        IntPtr rectangles, int count, int op, int ordering);
+
+    public const int ShapeInput = 2, ShapeSet = 0, Unsorted = 0;
+
     [DllImport(Xfixes)] public static extern bool XFixesQueryExtension(IntPtr d, out int eventBase, out int errorBase);
     [DllImport(Xfixes)] public static extern void XFixesSelectSelectionInput(IntPtr d, IntPtr w, ulong selection, ulong eventMask);
 

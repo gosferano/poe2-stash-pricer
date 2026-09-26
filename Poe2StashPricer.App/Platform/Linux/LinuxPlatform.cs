@@ -15,6 +15,9 @@ internal sealed class LinuxPlatform : IDisposable
     private readonly WaylandClipboard? _wayland;
     private readonly X11Clipboard? _x11Clipboard;
 
+    /// <summary>The shared X11 connection, for the overlay's click-through shaping.</summary>
+    public X11Display Display { get { return _display; } }
+
     public X11GameWindow Game { get; }
     public IScreenCapture Capture { get; }
     public IInput? Input { get; }
