@@ -25,7 +25,7 @@ internal static class Wl
 
     [DllImport(Lib)] public static extern IntPtr wl_proxy_marshal_array_flags(IntPtr proxy, uint opcode, IntPtr iface,
                                                                               uint version, uint flags, WlArgument[]? args);
-    [DllImport(Lib)] public static extern int wl_proxy_add_listener(IntPtr proxy, IntPtr[] implementation, IntPtr data);
+    [DllImport(Lib)] public static extern int wl_proxy_add_listener(IntPtr proxy, IntPtr implementation, IntPtr data);
     [DllImport(Lib)] public static extern void wl_proxy_destroy(IntPtr proxy);
     [DllImport(Lib)] public static extern uint wl_proxy_get_version(IntPtr proxy);
 
@@ -43,6 +43,27 @@ internal static class Wl
     {
         if (handle == IntPtr.Zero) handle = NativeLibrary.Load(Lib);
         return NativeLibrary.GetExport(handle, name);
+    }
+
+    private static readonly List<object> listeners = new List<object>();
+
+    /// <summary>
+    /// Builds a listener for wl_proxy_add_listener. The library keeps the pointer it is given and calls
+    /// through it for as long as the proxy lives, so the table cannot be a managed array: the collector
+    /// would be free to move it the moment this returns, and the next event would jump into nothing. It is
+    /// built in unmanaged memory instead, and the delegates are held here so they outlive it too.
+    /// </summary>
+    public static IntPtr Listener(params Delegate[] handlers)
+    {
+        IntPtr block = Marshal.AllocHGlobal(IntPtr.Size * handlers.Length);
+        for (int i = 0; i < handlers.Length; i++)
+            Marshal.WriteIntPtr(block, IntPtr.Size * i, Marshal.GetFunctionPointerForDelegate(handlers[i]));
+        lock (listeners)
+        {
+            foreach (Delegate d in handlers) listeners.Add(d);
+            listeners.Add(block);
+        }
+        return block;
     }
 
     public static IntPtr Request(IntPtr proxy, uint opcode, IntPtr newIface, WlArgument[]? args)

@@ -17,10 +17,7 @@ internal sealed class WaylandConnection : IDisposable
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void GlobalRemoveFn(IntPtr data, IntPtr registry, uint name);
 
-    // Kept in fields so the garbage collector cannot take them while the compositor still calls them.
-    private readonly GlobalFn onGlobal;
-    private readonly GlobalRemoveFn onGlobalRemove;
-    private readonly IntPtr[] registryListener;
+    private readonly IntPtr registryListener;
 
     public IntPtr Display { get; private set; }
     public IntPtr Registry { get; private set; }
@@ -34,13 +31,7 @@ internal sealed class WaylandConnection : IDisposable
 
     private WaylandConnection()
     {
-        onGlobal = OnGlobal;
-        onGlobalRemove = OnGlobalRemove;
-        registryListener = new[]
-        {
-            Marshal.GetFunctionPointerForDelegate(onGlobal),
-            Marshal.GetFunctionPointerForDelegate(onGlobalRemove),
-        };
+        registryListener = Wl.Listener(new GlobalFn(OnGlobal), new GlobalRemoveFn(OnGlobalRemove));
     }
 
     public static WaylandConnection? TryOpen()

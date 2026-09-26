@@ -45,15 +45,7 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void SendFn(IntPtr data, IntPtr proxy, IntPtr mime, int fd);
 
-    // Held in fields so the collector cannot take them while the compositor still calls them.
-    private readonly ObjectFn onDataOffer;
-    private readonly ObjectFn onSelection;
-    private readonly VoidFn onFinished;
-    private readonly ObjectFn onPrimarySelection;
-    private readonly OfferFn onOfferMime;
-    private readonly SendFn onSend;
-    private readonly VoidFn onCancelled;
-    private readonly IntPtr[] deviceListener, offerListener, sourceListener;
+    private readonly IntPtr deviceListener, offerListener, sourceListener;
 
     private readonly WaylandConnection connection;
     private readonly DataControl protocol;
@@ -74,27 +66,10 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
         this.connection = connection;
         this.protocol = protocol;
 
-        onDataOffer = OnDataOffer;
-        onSelection = OnSelection;
-        onFinished = OnFinished;
-        onPrimarySelection = OnPrimarySelection;
-        onOfferMime = OnOfferMime;
-        onSend = OnSend;
-        onCancelled = OnCancelled;
-
-        deviceListener = new[]
-        {
-            Marshal.GetFunctionPointerForDelegate(onDataOffer),
-            Marshal.GetFunctionPointerForDelegate(onSelection),
-            Marshal.GetFunctionPointerForDelegate(onFinished),
-            Marshal.GetFunctionPointerForDelegate(onPrimarySelection),
-        };
-        offerListener = new[] { Marshal.GetFunctionPointerForDelegate(onOfferMime) };
-        sourceListener = new[]
-        {
-            Marshal.GetFunctionPointerForDelegate(onSend),
-            Marshal.GetFunctionPointerForDelegate(onCancelled),
-        };
+        deviceListener = Wl.Listener(new ObjectFn(OnDataOffer), new ObjectFn(OnSelection),
+                                     new VoidFn(OnFinished), new ObjectFn(OnPrimarySelection));
+        offerListener = Wl.Listener(new OfferFn(OnOfferMime));
+        sourceListener = Wl.Listener(new SendFn(OnSend), new VoidFn(OnCancelled));
 
         device = Wl.Request(connection.Manager, DataControl.ManagerGetDataDevice, protocol.Device.Ptr,
                             new[] { WlArgument.NewId(), WlArgument.Ptr(connection.Seat) });
