@@ -38,7 +38,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 |---|---|---|---|
 | `src/Layouts.json` | `Poe2StashPricer.Core/Layouts.json` | done | Copied as-is, embedded as `Poe2StashPricer.Layouts.json`. |
 | `src/SlotDetector.cs` | `Poe2StashPricer.Core/Detection/PixelBuffer.cs`, `Detection/SlotDetector.cs` | done | Split: `PixelBuffer` gets its own file. |
-| `src/StashLocator.cs` | `Poe2StashPricer.Core/Detection/StashLocator.cs` | later | |
+| `src/StashLocator.cs` | `Poe2StashPricer.Core/Detection/StashLocator.cs` | done | Namespace rename only. |
 | `src/DigitReader.cs` | `Poe2StashPricer.Core/Detection/DigitReader.cs` | later | |
 | `src/TabWatcher.cs` | `Poe2StashPricer.Core/Detection/TabWatcher.cs` | later | |
 | `src/Scanner.cs` | `Poe2StashPricer.Core/Detection/Grid.cs`, `Scanning/{Scanner,ScanConfig,ScanPlan,ProbeGroup,ScanItem,ScanResult}.cs` | later | Split by type; `Grid.Capture` moves behind `IScreenCapture`. |
