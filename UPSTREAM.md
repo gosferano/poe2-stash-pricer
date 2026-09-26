@@ -53,7 +53,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `src/MainForm.cs` | Core session controller + Avalonia main window | later | Phase 3/4: orchestration moves to Core, UI to Avalonia. |
 | `src/OverlayForm.cs` | Avalonia or layer-shell overlay | later | Phase 4. |
 | `src/Theme.cs` | Avalonia styles | later | Phase 4. |
-| `src/Program.cs` | `Poe2StashPricer.App/Program.cs` | later | Rewritten for Avalonia; no single-instance mutex or updater yet. |
+| `src/Program.cs` | `Poe2StashPricer.App/Program.cs` | part | Rewritten for Avalonia; no single-instance guard or updater. |
 | `src/Updater.cs` | — | no | In-app self-update from GitHub releases; not wanted here. |
 | `src/app.manifest`, `src/app.ico` | — | no | Windows-specific. |
 | `build.ps1` | — | no | Replaced by `dotnet build`. |
