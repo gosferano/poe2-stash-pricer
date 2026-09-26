@@ -31,7 +31,8 @@ Upstream's git history is not imported; files were copied in from a clone of the
 
 ## File map
 
-Status: **done** = ported, **later** = planned for a later phase, **no** = intentionally not ported.
+Status: **done** = ported, **part** = partly done, **later** = planned for a later phase,
+**no** = intentionally not ported.
 
 | Upstream path | Here | Status | Notes |
 |---|---|---|---|
@@ -47,7 +48,7 @@ Status: **done** = ported, **later** = planned for a later phase, **no** = inten
 | `src/PriceService.cs` | `Poe2StashPricer.Core/Pricing/PriceTable.cs`, `Pricing/PriceService.cs` | later | Split: `PriceInfo` and `PriceTable` get their own file. |
 | `src/Settings.cs` | `Poe2StashPricer.Core/Storage/AppSettings.cs`, `Storage/AppPaths.cs` | done | Split: the data folder moves to `AppPaths`. |
 | `src/Log.cs` | `Poe2StashPricer.Core/Storage/Log.cs` | done | |
-| `src/Native.cs` | `Poe2StashPricer.Core/Platform/*.cs` + app `Platform/` | later | Replaced by interfaces and their Linux implementations, not ported as a file. |
+| `src/Native.cs` | `Poe2StashPricer.Core/Platform/*.cs` + app `Platform/` | part | Not ported as a file: replaced by interfaces (done) and their Linux implementations (Phase 2). |
 | `src/Hotkeys.cs` | `Poe2StashPricer.Core/Storage/Hotkey.cs` | done | Only the neutral key representation is kept; the WinForms `Keys` helpers and `KeyCaptureForm` are dropped. |
 | `src/MainForm.cs` | Core session controller + Avalonia main window | later | Phase 3/4: orchestration moves to Core, UI to Avalonia. |
 | `src/OverlayForm.cs` | Avalonia or layer-shell overlay | later | Phase 4. |
