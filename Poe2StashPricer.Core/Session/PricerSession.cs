@@ -304,8 +304,7 @@ public class PricerSession : IDisposable
                     return;
                 }
                 if (outcome.StashNotFound) { Problem(NoStash, outcome.Config.Window); return; }
-                NoteStash(outcome.Config.Region, outcome.Result.Snapshot, outcome.Key);
-                ViewChangedNow();
+                NoteStash(outcome.Config.Region, outcome.Result.Snapshot, outcome.Key);   // raises ViewChanged
                 UpdateOverlay(true);
                 if (outcome.Status != null) Say(outcome.Status);
             }

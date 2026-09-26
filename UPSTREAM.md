@@ -58,7 +58,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `src/Log.cs` | `Poe2StashPricer.Core/Storage/Log.cs` | done | |
 | `src/Native.cs` | `Poe2StashPricer.Core/Platform/*.cs` + `Poe2StashPricer.App/Platform/Linux/` | done | Not ported as a file: replaced by interfaces and their Linux implementations. |
 | `src/Hotkeys.cs` | `Poe2StashPricer.Core/Storage/Hotkey.cs` | done | Only the neutral key representation is kept; the WinForms `Keys` helpers and `KeyCaptureForm` are dropped. |
-| `src/MainForm.cs` | Core session controller + Avalonia main window | later | Phase 3/4: orchestration moves to Core, UI to Avalonia. |
+| `src/MainForm.cs` | `Poe2StashPricer.Core/Session/` + Avalonia main window | part | Its orchestration is ported (`PricerSession` and the pieces around it); the window itself is Phase 4. |
 | `src/OverlayForm.cs` | Avalonia or layer-shell overlay | later | Phase 4. |
 | `src/Theme.cs` | Avalonia styles | later | Phase 4. |
 | `src/Program.cs` | `Poe2StashPricer.App/Program.cs` | part | Rewritten for Avalonia; no single-instance guard or updater. |
@@ -67,6 +67,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `build.ps1` | — | no | Replaced by `dotnet build`. |
 | `.github/workflows/build.yml` | — | no | Windows build and release workflow. |
 | — (new) | `Poe2StashPricer.Core/Storage/Json.cs` | done | The shared `System.Text.Json` options, in place of upstream's per-file `new JavaScriptSerializer()`. |
+| — (new) | `Poe2StashPricer.Core/Session/` | done | What `MainForm` did minus the window: `PricerSession`, `StashModel`, `StashWatcher`, `HoverPricer`, `ScanRunner`, `PriceFeed`, `OverlayContent`, `Money`, `Rows`. |
 | `tools/` | — | no | `DetectTest`, `LayoutTool`, `make-icon.ps1`, `make-layouts.ps1`: development tools, not ported. |
 
 ## How the Linux platform layer answers each Win32 call

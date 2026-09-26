@@ -12,6 +12,8 @@ internal static class Program
         if (Array.IndexOf(args, "--debug-scan") >= 0)
             return DebugScan.Run(Array.IndexOf(args, "--prices") >= 0,
                                  Array.IndexOf(args, "--hold") >= 0 ? 15 : 0);
+        if (Array.IndexOf(args, "--debug-session") >= 0)
+            return DebugSession.Run(60, Array.IndexOf(args, "--scan") >= 0);
         if (Array.IndexOf(args, "--debug-watch") >= 0)
             return DebugWatch.Run(60, Array.IndexOf(args, "--prices") >= 0);
         if (Array.IndexOf(args, "--debug-wayland") >= 0)
