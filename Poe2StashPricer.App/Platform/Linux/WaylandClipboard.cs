@@ -64,6 +64,7 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
     private IntPtr device;
     private IntPtr currentOffer;
     private readonly Dictionary<IntPtr, List<string>> offerMimes = new();
+    private readonly HashSet<IntPtr> liveOffers = new();
     private IntPtr source;
     private string offered = "";
     private long changes;
@@ -144,8 +145,20 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
 
     private void OnDataOffer(IntPtr data, IntPtr proxy, IntPtr offer)
     {
-        lock (sync) offerMimes[offer] = new List<string>();
+        lock (sync)
+        {
+            offerMimes[offer] = new List<string>();
+            liveOffers.Add(offer);
+        }
         Wl.wl_proxy_add_listener(offer, offerListener, IntPtr.Zero);
+    }
+
+    /// <summary>Caller holds the lock. Destroying an offer twice would take the process with it.</summary>
+    private void DropOffer(IntPtr offer)
+    {
+        if (offer == IntPtr.Zero || !liveOffers.Remove(offer)) return;
+        offerMimes.Remove(offer);
+        Wl.Destructor(offer, DataControl.OfferDestroy);
     }
 
     private void OnOfferMime(IntPtr data, IntPtr offer, IntPtr mime)
@@ -162,11 +175,7 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
     {
         lock (sync)
         {
-            if (currentOffer != IntPtr.Zero && currentOffer != offer)
-            {
-                offerMimes.Remove(currentOffer);
-                Wl.Destructor(currentOffer, DataControl.OfferDestroy);
-            }
+            if (currentOffer != offer) DropOffer(currentOffer);
             currentOffer = offer;
         }
         Interlocked.Increment(ref changes);
@@ -175,9 +184,7 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
     /// <summary>Middle-click paste, which this app has no use for; the offer is dropped.</summary>
     private void OnPrimarySelection(IntPtr data, IntPtr proxy, IntPtr offer)
     {
-        if (offer == IntPtr.Zero) return;
-        lock (sync) offerMimes.Remove(offer);
-        Wl.Destructor(offer, DataControl.OfferDestroy);
+        lock (sync) DropOffer(offer);
     }
 
     private void OnFinished(IntPtr data, IntPtr proxy)
@@ -220,18 +227,25 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
 
     // ---- reading ----
 
+    /// <summary>
+    /// The selection's text. The whole read is held under the lock: the dispatch thread destroys an offer as
+    /// soon as the next selection arrives, and during a scan that happens every few milliseconds, so reading
+    /// from an offer picked up a moment earlier would be reading freed memory. The compositor writes to the
+    /// pipe from its own process, so nothing here waits on our dispatch thread.
+    /// </summary>
     public string? GetText()
     {
-        IntPtr offer;
+        lock (sync) return GetTextLocked();
+    }
+
+    private string? GetTextLocked()
+    {
+        IntPtr offer = currentOffer;
+        if (offer == IntPtr.Zero) return null;
         string? mime = null;
-        lock (sync)
-        {
-            offer = currentOffer;
-            if (offer == IntPtr.Zero) return null;
-            if (offerMimes.TryGetValue(offer, out List<string>? mimes))
-                foreach (string candidate in TextMimes)
-                    if (mimes.Contains(candidate)) { mime = candidate; break; }
-        }
+        if (offerMimes.TryGetValue(offer, out List<string>? mimes))
+            foreach (string candidate in TextMimes)
+                if (mimes.Contains(candidate)) { mime = candidate; break; }
         if (mime == null) return null;
 
         int[] fds = new int[2];
@@ -305,6 +319,8 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
         lock (sync)
         {
             if (source != IntPtr.Zero) Wl.Destructor(source, DataControl.SourceDestroy);
+            DropOffer(currentOffer);
+            currentOffer = IntPtr.Zero;
             if (device != IntPtr.Zero) Wl.Destructor(device, DataControl.DeviceDestroy);
             source = device = IntPtr.Zero;
         }
