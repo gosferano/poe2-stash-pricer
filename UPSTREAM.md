@@ -80,21 +80,40 @@ Measured against the running game on Hyprland; see the notes below for what is n
 | `SendInput` (mouse) | uinput absolute pointer | Axes span a constant 0..65535 and each move is scaled against the desktop's current size, as upstream did with `SM_CXVIRTUALSCREEN`. |
 | `SendInput` (Ctrl+C) | uinput keyboard | |
 | `GetAsyncKeyState` | `XQueryKeymap`, `XQueryPointer` | Both stay correct while the game has focus. |
-| `GetClipboardSequenceNumber` | XFixes selection-owner notifications | A real counter, so a repeated identical copy is still seen. |
-| `Clipboard.GetText` | `XConvertSelection` for `UTF8_STRING` | |
-| `Clipboard.SetDataObject` with the history hints | owning `CLIPBOARD` and answering requests, offering `x-kde-passwordManagerHint` | Works between X clients. It does **not** reach Wayland applications; see below. |
+| `GetClipboardSequenceNumber` | data-control `selection` events | A real counter, so a repeated identical copy is still seen. |
+| `Clipboard.GetText` | the data-control offer, read through a pipe | |
+| `Clipboard.SetDataObject` with the history hints | a data-control source, offering `x-kde-passwordManagerHint` | Clipboard managers skip an offer carrying that type, which is how "keep this out of the history" is said here. |
 | `SHQueryUserNotificationState` | — | Dropped with the exclusive-fullscreen concept. |
 
-### The clipboard does not cross to Wayland
+### Why the clipboard goes through Wayland and not X
 
-The game and this app are both X clients, so the scan reads what the game copies without any bridge. But on
-this Hyprland session the XWayland clipboard is not mirrored to the Wayland one in either direction: a text
-put on the Wayland clipboard with `wl-copy` cannot be read through X, and a selection this app owns is
-invisible to `wl-paste`. Worse, taking the X selection clears whatever Wayland applications had copied.
+The obvious route was X11: the game is an XWayland client, so the app could own the `CLIPBOARD` selection
+like any other X client. That was written first and it does work between X clients, but it is the wrong
+layer on a Wayland desktop. The compositor mirrors what a *mapped, focused* X window copies into the Wayland
+clipboard, and the game qualifies; a 1x1 helper window like ours does not. So our selection stayed invisible
+to `wl-paste`, and merely taking it cleared what Wayland programs had copied. A scan destroyed the user's
+clipboard instead of putting it back.
 
-So a scan currently destroys the user's clipboard rather than restoring it. Reading the game is unaffected.
-Fixing it needs the Wayland side (`wlr-data-control` / `ext-data-control`, which `wl-clipboard` itself uses
-and both Hyprland and KWin implement); that is not written yet.
+The data-control protocol is the right layer: it is what a clipboard manager uses, so it reads and sets the
+selection without the app ever holding focus. Measured on Hyprland, the compositor mirrors every one of the
+game's copies into it, so one connection covers both the game's Ctrl+C and the user's own clipboard, and the
+answer arrives as quickly as XFixes did (13 ms median against 15 ms).
+
+It exists twice with the same shape: `ext-data-control-v1`, the standardised version, and
+`zwlr-data-control-unstable-v1`, the wlroots one it grew out of. Both are described in
+`Platform/Linux/DataControlProtocol.cs` and whichever the compositor offers is used, `ext-` first. One
+wrinkle: `primary_selection` is a device event from version 1 in `ext-` but only from version 2 in the
+wlroots protocol, and declaring too few events makes libwayland drop the connection.
+
+There is no code generator here, so the protocol tables libwayland expects are built by hand in unmanaged
+memory (`Platform/Linux/WaylandInterop.cs`). Requests go through `wl_proxy_marshal_array_flags`, which takes
+its arguments as an array; the variadic entry point the C headers use cannot be called safely from .NET.
+
+`Platform/Linux/X11Clipboard.cs` is kept as the fallback for a plain X session or a compositor without the
+protocol. There the user's clipboard cannot be put back, and the app says so.
+
+A selection belongs to a running program on Wayland just as on X: when the app exits, what it put on the
+clipboard goes with it unless a clipboard manager has taken a copy. That is normal for every application.
 
 ## Deliberate behaviour changes
 

@@ -50,8 +50,9 @@ dotnet run --project Poe2StashPricer.App -- --debug-scan --prices
 It finds the game window, reads the stash, hovers every slot, and prints each item with what poe.ninja says
 it is worth. Leave off `--prices` to skip the download and just list what was read.
 
-**It will take over your clipboard.** The scan copies items the way you would, and the clipboard cannot yet be
-put back the way it was — see [UPSTREAM.md](UPSTREAM.md#the-clipboard-does-not-cross-to-wayland).
+The scan borrows your clipboard, because copying items is how the game is read, and puts it back when it is
+done. A clipboard belongs to a running program, though, so the text is restored only for as long as the app
+is running: add `--hold` to keep it alive for a few seconds afterwards and see for yourself.
 
 ## Licence
 
