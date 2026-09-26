@@ -1,0 +1,9 @@
+# Lets the desktop user create the virtual mouse and keyboard the scanner needs.
+#
+# Install with:
+#   sudo cp packaging/99-poe2-stash-pricer-uinput.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# Most people running Path of Exile 2 need nothing: Steam ships
+# /usr/lib/udev/rules.d/60-steam-input.rules, which already tags /dev/uinput for the logged-in user.
+KERNEL=="uinput", MODE="0660", TAG+="uaccess", OPTIONS+="static_node=uinput"
