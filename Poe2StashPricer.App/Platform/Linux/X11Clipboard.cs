@@ -29,7 +29,8 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
 
     private IntPtr readWindow;                   // on the shared connection
     private IntPtr ownerWindow;                  // on the owned connection
-    private ulong clipboard, utf8, targets, incr, plainUtf8, text, passwordHint, readProp, wake;
+    private readonly XAtoms atoms;
+    private int selectionOwnerEvent = -1;   // the XFixes event number for a change of selection owner
     private long changes;
 
     // What we are serving, when we own the selection.
@@ -42,7 +43,7 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
     public X11Clipboard(X11Display shared)
     {
         this.shared = shared;
-        Atoms(shared, out clipboard, out utf8, out targets, out incr, out plainUtf8, out text, out passwordHint, out readProp, out wake);
+        atoms = new XAtoms(shared);
 
         lock (shared.Sync)
             readWindow = X11.XCreateSimpleWindow(shared.Handle, shared.Root, 0, 0, 1, 1, 0, 0, 0);
@@ -52,19 +53,24 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         if (!ready.Wait(5000)) Log.Write("the clipboard watcher did not start in time");
     }
 
-    private static void Atoms(X11Display d, out ulong clipboard, out ulong utf8, out ulong targets, out ulong incr,
-                              out ulong plainUtf8, out ulong text, out ulong passwordHint, out ulong readProp, out ulong wake)
+    /// <summary>The interned atoms this class works with, named so that an atom never reads as a value.</summary>
+    private sealed class XAtoms
     {
-        clipboard = d.Atom("CLIPBOARD");
-        utf8 = d.Atom("UTF8_STRING");
-        targets = d.Atom("TARGETS");
-        incr = d.Atom("INCR");
-        plainUtf8 = d.Atom("text/plain;charset=utf-8");
-        text = d.Atom("TEXT");
-        // Clipboard managers (Klipper, and cliphist through wl-paste) skip anything offering this.
-        passwordHint = d.Atom("x-kde-passwordManagerHint");
-        readProp = d.Atom("POE2_CLIPBOARD_READ");
-        wake = d.Atom("POE2_CLIPBOARD_WAKE");
+        public readonly ulong Clipboard, Utf8String, Targets, Incr, PlainUtf8, Text, PasswordHint, ReadProperty, Wake;
+
+        public XAtoms(X11Display d)
+        {
+            Clipboard = d.Atom("CLIPBOARD");
+            Utf8String = d.Atom("UTF8_STRING");
+            Targets = d.Atom("TARGETS");
+            Incr = d.Atom("INCR");
+            PlainUtf8 = d.Atom("text/plain;charset=utf-8");
+            Text = d.Atom("TEXT");
+            // Clipboard managers (Klipper, and cliphist through wl-paste) skip anything offering this.
+            PasswordHint = d.Atom("x-kde-passwordManagerHint");
+            ReadProperty = d.Atom("POE2_CLIPBOARD_READ");
+            Wake = d.Atom("POE2_CLIPBOARD_WAKE");
+        }
     }
 
     /// <summary>Goes up on every clipboard change, whoever made it.</summary>
@@ -82,13 +88,13 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         lock (shared.Sync)
         {
             if (readWindow == IntPtr.Zero) return null;
-            X11.XDeleteProperty(shared.Handle, readWindow, readProp);
-            X11.XConvertSelection(shared.Handle, clipboard, utf8, readProp, readWindow, 0 /* CurrentTime */);
+            X11.XDeleteProperty(shared.Handle, readWindow, atoms.ReadProperty);
+            X11.XConvertSelection(shared.Handle, atoms.Clipboard, atoms.Utf8String, atoms.ReadProperty, readWindow, 0 /* CurrentTime */);
             X11.XFlush(shared.Handle);
 
             if (!WaitForSelectionNotify(timeoutMs)) return null;
 
-            if (X11.XGetWindowProperty(shared.Handle, readWindow, readProp, 0, 4 * 1024 * 1024, true,
+            if (X11.XGetWindowProperty(shared.Handle, readWindow, atoms.ReadProperty, 0, 4 * 1024 * 1024, true,
                                        0 /* AnyPropertyType */, out ulong actualType, out int fmt,
                                        out ulong n, out _, out IntPtr prop) != 0 || prop == IntPtr.Zero)
                 return null;
@@ -96,7 +102,7 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
             {
                 // An item's text is a few hundred bytes, far short of the server's limit, so the chunked
                 // INCR protocol never comes up. If it ever did, treating it as "nothing" is the safe answer.
-                if (actualType == incr) { Log.Write("clipboard offered an INCR transfer, which is not handled"); return null; }
+                if (actualType == atoms.Incr) { Log.Write("clipboard offered an INCR transfer, which is not handled"); return null; }
                 if (fmt != 8 || n == 0) return null;
                 byte[] raw = new byte[n];
                 Marshal.Copy(prop, raw, 0, (int)n);
@@ -148,7 +154,7 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         byte[] ev = new byte[96];
         BitConverter.GetBytes(33).CopyTo(ev, 0);              // ClientMessage
         BitConverter.GetBytes((long)target).CopyTo(ev, 32);
-        BitConverter.GetBytes((long)wake).CopyTo(ev, 40);
+        BitConverter.GetBytes((long)atoms.Wake).CopyTo(ev, 40);
         BitConverter.GetBytes(32).CopyTo(ev, 48);
         lock (shared.Sync)
         {
@@ -172,9 +178,9 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
                     ready.Set();
                     return;
                 }
-                X11.XFixesSelectSelectionInput(owned.Handle, ownerWindow, clipboard, X11.XFixesSetSelectionOwnerNotifyMask);
+                X11.XFixesSelectSelectionInput(owned.Handle, ownerWindow, atoms.Clipboard, X11.XFixesSetSelectionOwnerNotifyMask);
                 X11.XSync(owned.Handle, false);
-                selectionNotifyEvent = xfixesEvent;
+                selectionOwnerEvent = xfixesEvent;
             }
             ready.Set();
 
@@ -184,7 +190,7 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
                 // XNextEvent blocks, which is why this connection is not shared with anyone.
                 X11.XNextEvent(owned.Handle, ev);
                 int type = BitConverter.ToInt32(ev, 0);
-                if (type == selectionNotifyEvent) Interlocked.Increment(ref changes);
+                if (type == selectionOwnerEvent) Interlocked.Increment(ref changes);
                 else if (type == X11.SelectionRequest) Answer(ev);
                 else if (type == X11.SelectionClear) lock (offerSync) offered = null;
                 TakeOwnershipIfAsked();
@@ -197,8 +203,6 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
             owned?.Dispose();
         }
     }
-
-    private int selectionNotifyEvent = -1;
 
     private void TakeOwnershipIfAsked()
     {
@@ -216,7 +220,7 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         if (owned == null) return;
         lock (owned.Sync)
         {
-            X11.XSetSelectionOwner(owned.Handle, clipboard, ownerWindow, 0 /* CurrentTime */);
+            X11.XSetSelectionOwner(owned.Handle, atoms.Clipboard, ownerWindow, 0 /* CurrentTime */);
             X11.XFlush(owned.Handle);
         }
     }
@@ -244,23 +248,23 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         {
             lock (owned.Sync)
             {
-                if (target == targets)
+                if (target == atoms.Targets)
                 {
                     ulong[] list = sensitive
-                        ? new[] { targets, utf8, plainUtf8, X11.XA_STRING, text, passwordHint }
-                        : new[] { targets, utf8, plainUtf8, X11.XA_STRING, text };
+                        ? new[] { atoms.Targets, atoms.Utf8String, atoms.PlainUtf8, X11.XA_STRING, atoms.Text, atoms.PasswordHint }
+                        : new[] { atoms.Targets, atoms.Utf8String, atoms.PlainUtf8, X11.XA_STRING, atoms.Text };
                     byte[] data = new byte[list.Length * 8];
                     for (int i = 0; i < list.Length; i++) BitConverter.GetBytes((long)list[i]).CopyTo(data, i * 8);
                     X11.XChangeProperty(owned.Handle, requestor, property, X11.XA_ATOM, 32, X11.PropModeReplace, data, list.Length);
                     ok = true;
                 }
-                else if (sensitive && target == passwordHint)
+                else if (sensitive && target == atoms.PasswordHint)
                 {
                     byte[] data = Encoding.UTF8.GetBytes("secret");
                     X11.XChangeProperty(owned.Handle, requestor, property, target, 8, X11.PropModeReplace, data, data.Length);
                     ok = true;
                 }
-                else if (target == utf8 || target == plainUtf8 || target == X11.XA_STRING || target == text)
+                else if (target == atoms.Utf8String || target == atoms.PlainUtf8 || target == X11.XA_STRING || target == atoms.Text)
                 {
                     byte[] data = Encoding.UTF8.GetBytes(give);
                     X11.XChangeProperty(owned.Handle, requestor, property, target, 8, X11.PropModeReplace, data, data.Length);
@@ -273,7 +277,7 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         byte[] ev = new byte[96];
         BitConverter.GetBytes(X11.SelectionNotify).CopyTo(ev, 0);
         BitConverter.GetBytes((long)requestor).CopyTo(ev, 32);
-        BitConverter.GetBytes((long)clipboard).CopyTo(ev, 40);
+        BitConverter.GetBytes((long)atoms.Clipboard).CopyTo(ev, 40);
         BitConverter.GetBytes((long)target).CopyTo(ev, 48);
         BitConverter.GetBytes((long)(ok ? property : 0)).CopyTo(ev, 56);
         BitConverter.GetBytes((long)time).CopyTo(ev, 64);
