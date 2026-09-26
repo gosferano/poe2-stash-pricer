@@ -25,7 +25,7 @@ public class AppSettings
         CopyTimeout = 150;
     }
 
-    static string FilePath { get { return Path.Combine(AppPaths.Dir, "settings.json"); } }
+    private static string FilePath { get { return Path.Combine(AppPaths.Dir, "settings.json"); } }
 
     public static AppSettings Load()
     {

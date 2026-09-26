@@ -10,13 +10,13 @@ namespace Poe2StashPricer.Detection;
 /// </summary>
 public class TabWatcher
 {
-    const int ColorTolerance = 14;   // per-channel mean difference for a cell to count as changed
-    const int MinChangedCells = 2;   // one odd cell is noise; a different tab changes many
+    private const int ColorTolerance = 14;   // per-channel mean difference for a cell to count as changed
+    private const int MinChangedCells = 2;   // one odd cell is noise; a different tab changes many
 
-    readonly IScreenCapture capture;
-    float[,,] baseline;
-    Rectangle region;
-    int cols, rows;
+    private readonly IScreenCapture capture;
+    private float[,,] baseline;
+    private Rectangle region;
+    private int cols, rows;
 
     public TabWatcher(IScreenCapture capture)
     {
@@ -53,7 +53,7 @@ public class TabWatcher
     }
 
     /// <summary>Mean colour of each cell's inner area (sub-sampled).</summary>
-    static float[,,] Signature(PixelBuffer pb, int cols, int rows)
+    private static float[,,] Signature(PixelBuffer pb, int cols, int rows)
     {
         float[,,] sig = new float[rows, cols, 3];
         Rectangle all = new Rectangle(0, 0, pb.Width, pb.Height);

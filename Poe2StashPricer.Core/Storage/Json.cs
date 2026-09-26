@@ -6,9 +6,9 @@ namespace Poe2StashPricer.Storage;
 /// The one place the JSON settings live. Upstream used JavaScriptSerializer, which matched property
 /// names loosely; System.Text.Json is told to do the same so files written by either name style load.
 /// </summary>
-static class Json
+internal static class Json
 {
-    static readonly JsonSerializerOptions Options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    private static readonly JsonSerializerOptions Options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
     public static T Deserialize<T>(string text) { return JsonSerializer.Deserialize<T>(text, Options); }
 

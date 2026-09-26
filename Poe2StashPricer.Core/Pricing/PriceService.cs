@@ -13,24 +13,24 @@ namespace Poe2StashPricer.Pricing;
 
 public static class PriceService
 {
-    const string Base = "https://poe.ninja/poe2/api/economy/";
-    const string UserAgent = "Poe2StashPricer/0.1.0 (Linux desktop stash pricing tool)";
+    private const string Base = "https://poe.ninja/poe2/api/economy/";
+    private const string UserAgent = "Poe2StashPricer/0.1.0 (Linux desktop stash pricing tool)";
 
-    static readonly string[] ExchangeTypes =
+    private static readonly string[] ExchangeTypes =
     {
         "Currency", "Fragments", "Abyss", "UncutGems", "LineageSupportGems", "Essences", "SoulCores",
         "Idols", "Runes", "Ritual", "Expedition", "Delirium", "Breach", "Verisium"
     };
 
-    static readonly string[] StashTypes =
+    private static readonly string[] StashTypes =
     {
         "UniqueWeapons", "UniqueArmours", "UniqueAccessories", "UniqueFlasks", "UniqueCharms",
         "UniqueJewels", "UniqueSanctumRelics", "UniqueTablets", "PrecursorTablets"
     };
 
-    static readonly HttpClient http = NewClient();
+    private static readonly HttpClient http = NewClient();
 
-    static HttpClient NewClient()
+    private static HttpClient NewClient()
     {
         HttpClientHandler handler = new HttpClientHandler();
         handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
@@ -42,7 +42,7 @@ public static class PriceService
     }
 
     /// <param name="t">The table being filled, so a "slow down" answer can be remembered; may be null.</param>
-    static string Get(string url, PriceTable t)
+    private static string Get(string url, PriceTable t)
     {
         using (HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, url))
         using (HttpResponseMessage resp = http.Send(req, HttpCompletionOption.ResponseHeadersRead))
@@ -69,11 +69,11 @@ public static class PriceService
         }
     }
 
-    const int MaxResponseChars = 64 * 1024 * 1024;
+    private const int MaxResponseChars = 64 * 1024 * 1024;
 
-    static string Q(string s) { return Uri.EscapeDataString(s); }
+    private static string Q(string s) { return Uri.EscapeDataString(s); }
 
-    static double Num(JsonElement e)
+    private static double Num(JsonElement e)
     {
         if (e.ValueKind == JsonValueKind.Number) return e.GetDouble();
         if (e.ValueKind == JsonValueKind.String)
@@ -84,7 +84,7 @@ public static class PriceService
         return 0;
     }
 
-    static string Str(JsonElement d, string k)
+    private static string Str(JsonElement d, string k)
     {
         JsonElement v;
         if (d.ValueKind != JsonValueKind.Object || !d.TryGetProperty(k, out v)) return null;
@@ -92,7 +92,7 @@ public static class PriceService
         return v.ValueKind == JsonValueKind.String ? v.GetString() : v.ToString();
     }
 
-    static IEnumerable<JsonElement> List(JsonElement d, string k)
+    private static IEnumerable<JsonElement> List(JsonElement d, string k)
     {
         JsonElement v;
         if (d.ValueKind != JsonValueKind.Object || !d.TryGetProperty(k, out v) || v.ValueKind != JsonValueKind.Array) yield break;
@@ -180,7 +180,7 @@ public static class PriceService
     }
 
     /// <summary>True (and remembered in the table) when the server asked us to slow down.</summary>
-    static bool Limited(HttpResponseMessage resp, PriceTable t)
+    private static bool Limited(HttpResponseMessage resp, PriceTable t)
     {
         int code = (int)resp.StatusCode;
         if (code != 429 && code != 503) return false;
@@ -195,7 +195,7 @@ public static class PriceService
         return true;
     }
 
-    static void ReadRates(PriceTable t, JsonElement root)
+    private static void ReadRates(PriceTable t, JsonElement root)
     {
         if (t.ExPerDiv > 0) return;
         JsonElement core, rates, v;

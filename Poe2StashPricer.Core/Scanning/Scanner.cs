@@ -13,12 +13,12 @@ namespace Poe2StashPricer.Scanning;
 /// <summary>Hovers each detected item, presses Ctrl+C and reads what the game copied.</summary>
 public class Scanner
 {
-    readonly ScanConfig cfg;
-    readonly IScreenCapture capture;
-    readonly IInput input;
-    readonly IKeyState keys;
-    readonly IClipboard clipboard;
-    readonly IGameWindow game;
+    private readonly ScanConfig cfg;
+    private readonly IScreenCapture capture;
+    private readonly IInput input;
+    private readonly IKeyState keys;
+    private readonly IClipboard clipboard;
+    private readonly IGameWindow game;
     public volatile bool CancelRequested;
 
     public Scanner(ScanConfig cfg, IScreenCapture capture, IInput input, IKeyState keys, IClipboard clipboard, IGameWindow game)
@@ -86,7 +86,7 @@ public class Scanner
     /// out. Take pictures until the stash area (<paramref name="watch"/>, window coordinates) stops
     /// changing, at most about a second.
     /// </summary>
-    static PixelBuffer CaptureStable(Rectangle win, Rectangle watch, IScreenCapture capture)
+    private static PixelBuffer CaptureStable(Rectangle win, Rectangle watch, IScreenCapture capture)
     {
         PixelBuffer prev = capture.Capture(win);
         for (int i = 0; i < 10; i++)
@@ -100,7 +100,7 @@ public class Scanner
     }
 
     /// <summary>True when the area is (nearly) uniformly black: what a capture the compositor denied gives.</summary>
-    static bool IsBlack(PixelBuffer pb, Rectangle area)
+    private static bool IsBlack(PixelBuffer pb, Rectangle area)
     {
         area.Intersect(new Rectangle(0, 0, pb.Width, pb.Height));
         long bright = 0; int n = 0;
@@ -128,7 +128,7 @@ public class Scanner
         return n == 0 ? 0 : sum / (3.0 * n);
     }
 
-    bool ShouldAbort()
+    private bool ShouldAbort()
     {
         if (CancelRequested || keys.AbortPressed) return true;
         return game != null && !game.IsForeground();
@@ -139,13 +139,13 @@ public class Scanner
     /// it as private; put back as plain text it would land in the clipboard manager's history. So the
     /// restored copy is offered in a way that keeps it out of there.
     /// </summary>
-    static void RestoreClipboard(string text, IClipboard clipboard)
+    private static void RestoreClipboard(string text, IClipboard clipboard)
     {
         try { clipboard.SetText(text, true); }
         catch { }
     }
 
-    static string ReadClipboard(IClipboard clipboard)
+    private static string ReadClipboard(IClipboard clipboard)
     {
         try { return clipboard.GetText(); }
         catch { return null; }
@@ -153,13 +153,13 @@ public class Scanner
 
     // How long the game took to answer Ctrl+C on recent items (milliseconds). Kept across scans, so a tab
     // with one item still knows how long an empty slot is worth waiting for.
-    static readonly List<double> copyLatency = new List<double>();
+    private static readonly List<double> copyLatency = new List<double>();
 
     /// <summary>
     /// Waiting for an empty slot is most of a scan's time. Once a few items showed how fast the game
     /// answers, wait a few times that long instead of the full configured timeout.
     /// </summary>
-    int EmptySlotTimeout()
+    private int EmptySlotTimeout()
     {
         if (copyLatency.Count < 4) return cfg.CopyTimeout;
         List<double> l = new List<double>(copyLatency);
@@ -168,9 +168,9 @@ public class Scanner
         return (int)Math.Max(60, Math.Min(cfg.CopyTimeout, p90 * 3 + 30));
     }
 
-    string CopyHovered() { return CopyHovered(EmptySlotTimeout()); }
+    private string CopyHovered() { return CopyHovered(EmptySlotTimeout()); }
 
-    string CopyHovered(int timeout) { return CopyHovered(timeout, input, clipboard); }
+    private string CopyHovered(int timeout) { return CopyHovered(timeout, input, clipboard); }
 
     /// <summary>
     /// Copies the item the user's own mouse rests on (hover pricing): one Ctrl+C, the user's clipboard put back
@@ -183,7 +183,7 @@ public class Scanner
         finally { if (saved != null) RestoreClipboard(saved, clipboard); }
     }
 
-    static string CopyHovered(int timeout, IInput input, IClipboard clipboard)
+    private static string CopyHovered(int timeout, IInput input, IClipboard clipboard)
     {
         ulong seq = clipboard.ChangeCount;
         input.SendCopy();
@@ -326,7 +326,7 @@ public class Scanner
     /// Items whose text has a stack size teach the digit reader what the numbers look like; items that are
     /// stackable but have no stack size in their text get their count read from the screen.
     /// </summary>
-    void ReadCountsFromScreen(ScanResult res)
+    private void ReadCountsFromScreen(ScanResult res)
     {
         if (res.Snapshot == null) return;
         Point origin = cfg.Region.Location;
@@ -347,7 +347,7 @@ public class Scanner
         DigitReader.Save();
     }
 
-    static Rectangle Local(Rectangle screen, Point origin)
+    private static Rectangle Local(Rectangle screen, Point origin)
     {
         screen.Offset(-origin.X, -origin.Y);
         return screen;
@@ -380,7 +380,7 @@ public class Scanner
         res.Items = kept;
     }
 
-    static void BuildItems(ScanResult res, ProbeGroup g, Func<ParsedItem, PriceInfo> lookup)
+    private static void BuildItems(ScanResult res, ProbeGroup g, Func<ParsedItem, PriceInfo> lookup)
     {
         int rows = g.Rows, cols = g.Cols;
         string[,] texts = g.Texts;

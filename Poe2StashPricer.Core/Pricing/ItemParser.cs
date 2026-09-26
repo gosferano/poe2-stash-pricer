@@ -48,8 +48,8 @@ public static class ItemParser
 {
     // Starts with a digit and stops at "/": no two parts of the pattern can match the same spaces, so a long
     // odd line can't make the match slow. Thousands are separated by ".", "," or a (non-breaking) space.
-    static readonly Regex StackRx = new Regex(@"^Stack Size:\s*(\d[\d.,   ]*)/", RegexOptions.Compiled);
-    static readonly Regex LevelRx = new Regex(@"^Level:\s*(\d+)", RegexOptions.Compiled);
+    private static readonly Regex StackRx = new Regex(@"^Stack Size:\s*(\d[\d.,   ]*)/", RegexOptions.Compiled);
+    private static readonly Regex LevelRx = new Regex(@"^Level:\s*(\d+)", RegexOptions.Compiled);
 
     public static bool LooksLikeItem(string text)
     {

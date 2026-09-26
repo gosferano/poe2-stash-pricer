@@ -31,7 +31,7 @@ public class PixelBuffer
         Px = bgra;
     }
 
-    PixelBuffer(int w, int h)
+    private PixelBuffer(int w, int h)
     {
         Width = w;
         Height = h;

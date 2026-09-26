@@ -15,10 +15,10 @@ namespace Poe2StashPricer.Detection;
 /// </summary>
 public static class DigitReader
 {
-    const int GW = 8, GH = 12;           // glyphs are compared on this grid
-    const int MaxSamples = 6;            // per digit
-    const double MaxDistance = 18;       // above this a glyph is not considered read
-    const double MinMargin = 4;          // the best digit must beat every other digit by this much
+    private const int GW = 8, GH = 12;           // glyphs are compared on this grid
+    private const int MaxSamples = 6;            // per digit
+    private const double MaxDistance = 18;       // above this a glyph is not considered read
+    private const double MinMargin = 4;          // the best digit must beat every other digit by this much
 
     public class Store
     {
@@ -26,12 +26,12 @@ public static class DigitReader
         public Store() { Glyphs = new Dictionary<string, List<double[]>>(); }
     }
 
-    static Store store;
-    static bool dirty;
+    private static Store store;
+    private static bool dirty;
 
-    static string FilePath { get { return Path.Combine(AppPaths.Dir, "digits.json"); } }
+    private static string FilePath { get { return Path.Combine(AppPaths.Dir, "digits.json"); } }
 
-    static Store Data
+    private static Store Data
     {
         get
         {
@@ -122,7 +122,7 @@ public static class DigitReader
         return int.TryParse(s, out n) ? n : 0;
     }
 
-    static double Distance(double[] a, double[] b)
+    private static double Distance(double[] a, double[] b)
     {
         if (a.Length != b.Length) return double.MaxValue;
         double d = 0;
@@ -136,7 +136,7 @@ public static class DigitReader
     /// Finds the glyphs of the stack number in the slot's top-left corner and turns each into a GW x GH grid
     /// of ink coverage (plus its width relative to the digit height).
     /// </summary>
-    static List<double[]> Glyphs(PixelBuffer pb, Rectangle slot, double cs)
+    private static List<double[]> Glyphs(PixelBuffer pb, Rectangle slot, double cs)
     {
         List<double[]> result = new List<double[]>();
         Rectangle area = Rectangle.Intersect(new Rectangle(0, 0, pb.Width, pb.Height),
@@ -230,7 +230,7 @@ public static class DigitReader
     /// Connected shapes (4-neighbour: a diagonal touch through soft edge pixels would glue a digit to the
     /// icon); <paramref name="label"/> holds shape index + 1 per pixel.
     /// </summary>
-    static List<Rectangle> Components(bool[,] m, out int[,] label)
+    private static List<Rectangle> Components(bool[,] m, out int[,] label)
     {
         int h = m.GetLength(0), w = m.GetLength(1);
         label = new int[h, w];

@@ -44,7 +44,7 @@ public class PricedItem
 
 public static class ResultStore
 {
-    static string FilePath { get { return Path.Combine(AppPaths.Dir, "results.json"); } }
+    private static string FilePath { get { return Path.Combine(AppPaths.Dir, "results.json"); } }
 
     public static Dictionary<string, TabResult> Load()
     {

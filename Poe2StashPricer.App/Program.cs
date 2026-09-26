@@ -3,7 +3,7 @@ using Avalonia;
 
 namespace Poe2StashPricer.App;
 
-static class Program
+internal static class Program
 {
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

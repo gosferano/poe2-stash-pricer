@@ -28,7 +28,7 @@ public class PriceTable
 
     public int Count { get { return ByName.Count + UniqueByNameBase.Count; } }
 
-    static string Key(string s) { return s.Trim().ToLowerInvariant(); }
+    private static string Key(string s) { return s.Trim().ToLowerInvariant(); }
 
     public PriceInfo Lookup(ParsedItem it)
     {
@@ -85,7 +85,7 @@ public class PriceTable
     }
 
     // Variants (corrupted, different rolls...) share names; keep the most-listed one as the "typical" price.
-    static void Keep(Dictionary<string, PriceInfo> d, string k, PriceInfo info)
+    private static void Keep(Dictionary<string, PriceInfo> d, string k, PriceInfo info)
     {
         PriceInfo old;
         if (!d.TryGetValue(k, out old) || info.Listings > old.Listings) d[k] = info;

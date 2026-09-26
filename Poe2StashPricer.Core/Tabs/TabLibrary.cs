@@ -12,7 +12,7 @@ namespace Poe2StashPricer.Tabs;
 public static class TabLibrary
 {
     // Names of tabs saved by versions before 1.3 (which had a fixed list and stored no name).
-    static readonly Dictionary<string, string> LegacyNames = new Dictionary<string, string>
+    private static readonly Dictionary<string, string> LegacyNames = new Dictionary<string, string>
     {
         { "currency", "Currency" }, { "fragments", "Fragments" }, { "expedition", "Expedition" },
         { "breach", "Breach" }, { "abyss", "Abyss" }, { "essence", "Essence" }, { "delirium", "Delirium" },
@@ -21,7 +21,7 @@ public static class TabLibrary
     };
 
     // poe.ninja category of the items -> name of the special tab that holds them.
-    static readonly Dictionary<string, string> CategoryTabs = new Dictionary<string, string>
+    private static readonly Dictionary<string, string> CategoryTabs = new Dictionary<string, string>
     {
         { "Currency", "Currency" }, { "Fragments", "Fragments" }, { "Essences", "Essence" },
         { "Delirium", "Delirium" }, { "Ritual", "Ritual" }, { "Expedition", "Expedition" },
@@ -30,18 +30,18 @@ public static class TabLibrary
         { "Verisium", "Expedition" },   // Verisium and alloys sit in the Expedition tab
     };
 
-    static readonly Dictionary<string, string> names = new Dictionary<string, string>();
+    private static readonly Dictionary<string, string> names = new Dictionary<string, string>();
 
-    const int SigSize = 48;
+    private const int SigSize = 48;
     // Differences are 1 - correlation of the item-free parts of the picture (0 = identical).
     // Measured on 12 saved tabs: different tabs 0.10 (Runes vs Kalguuran Runes, same artwork) to 0.96;
     // the same tab, captured after the fade-in, 0.00 to 0.03 (0.65 when half faded, before CaptureStable).
     // The sub-tabs of Runes share frame colour and artwork, so a loose match took Soul Cores for Runes.
     public const double SureMatch = 0.07;   // this close: the same tab
-    const double MaxDifferent = 0.3;    // up to this: similar enough to check the items after the scan
-    const double MaxFrameHue = 0.15;    // frame colours further apart than this belong to different tabs
+    private const double MaxDifferent = 0.3;    // up to this: similar enough to check the items after the scan
+    private const double MaxFrameHue = 0.15;    // frame colours further apart than this belong to different tabs
 
-    static string Dir { get { return Path.Combine(AppPaths.Dir, "tabs"); } }
+    private static string Dir { get { return Path.Combine(AppPaths.Dir, "tabs"); } }
 
     public static string NameOf(string key)
     {
@@ -59,7 +59,7 @@ public static class TabLibrary
         return res;
     }
 
-    static Dictionary<string, TabProfile> LoadLearned()
+    private static Dictionary<string, TabProfile> LoadLearned()
     {
         Dictionary<string, TabProfile> res = new Dictionary<string, TabProfile>();
         if (!Directory.Exists(Dir)) return res;
@@ -188,13 +188,13 @@ public static class TabLibrary
 
     // Categories whose items have a place only in their own special tab (Currency, Omens and gems also
     // turn up in other tabs).
-    static readonly HashSet<string> OwnTab = new HashSet<string>
+    private static readonly HashSet<string> OwnTab = new HashSet<string>
     {
         "Fragments", "Essences", "Delirium", "Expedition", "Verisium", "Breach", "Abyss", "Runes", "SoulCores", "Idols"
     };
 
     /// <summary>True when the item sits exactly on the cells of a normal (12 wide) or quad (24 wide) tab.</summary>
-    static bool OnGrid(Rectangle bounds, Rectangle region)
+    private static bool OnGrid(Rectangle bounds, Rectangle region)
     {
         foreach (double cell in new[] { region.Width / 12.0, region.Width / 24.0 })
         {
@@ -262,7 +262,7 @@ public static class TabLibrary
         return p;
     }
 
-    static bool Overlaps(List<Rectangle> list, Rectangle rc)
+    private static bool Overlaps(List<Rectangle> list, Rectangle rc)
     {
         foreach (Rectangle t in list)
         {
@@ -292,7 +292,7 @@ public static class TabLibrary
         return difference <= SureMatch ? best : null;
     }
 
-    const double BuiltInMatch = 0.15, BuiltInMargin = 0.05;
+    private const double BuiltInMatch = 0.15, BuiltInMargin = 0.05;
 
     /// <summary>
     /// The saved tab that looks similar but not the same (after many items changed, say). Whether it is
@@ -315,7 +315,7 @@ public static class TabLibrary
         p.Saved = DateTime.Now;
     }
 
-    static TabProfile Closest(PixelBuffer pb, double[] frameColor, IEnumerable<TabProfile> profiles, out double difference, out double second)
+    private static TabProfile Closest(PixelBuffer pb, double[] frameColor, IEnumerable<TabProfile> profiles, out double difference, out double second)
     {
         List<double> sig = Signature(pb), mask = ItemMask(pb);
         TabProfile best = null;
@@ -370,7 +370,7 @@ public static class TabLibrary
         return res;
     }
 
-    static double Correlation(List<double> a, List<double> b, List<int> cells)
+    private static double Correlation(List<double> a, List<double> b, List<int> cells)
     {
         double ma = 0, mb = 0;
         foreach (int i in cells) { ma += a[i]; mb += b[i]; }

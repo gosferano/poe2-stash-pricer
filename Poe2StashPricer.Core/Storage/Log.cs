@@ -9,8 +9,8 @@ namespace Poe2StashPricer.Storage;
 /// </summary>
 public static class Log
 {
-    const long MaxSize = 256 * 1024;
-    static readonly object sync = new object();
+    private const long MaxSize = 256 * 1024;
+    private static readonly object sync = new object();
 
     public static string FilePath { get { return Path.Combine(AppPaths.Dir, "log.txt"); } }
 

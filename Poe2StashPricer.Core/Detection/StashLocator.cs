@@ -12,8 +12,8 @@ namespace Poe2StashPricer.Detection;
 public static class StashLocator
 {
     // Frame line positions measured on a 2560x1440 client, as fractions of the height.
-    const double FrameLeft = 20.0 / 1440, FrameTop = 166.0 / 1440, FrameSize = 847.0 / 1440;
-    const double SearchRange = 0.035;   // ± fraction of the height searched around each predicted edge
+    private const double FrameLeft = 20.0 / 1440, FrameTop = 166.0 / 1440, FrameSize = 847.0 / 1440;
+    private const double SearchRange = 0.035;   // ± fraction of the height searched around each predicted edge
 
     public class Result
     {
@@ -75,7 +75,7 @@ public static class StashLocator
         return res;
     }
 
-    static int FindEdges(PixelBuffer pb, int left, int top, int size, int range, int thick, bool grey,
+    private static int FindEdges(PixelBuffer pb, int left, int top, int size, int range, int thick, bool grey,
                          out int l, out int r, out int t, out int b)
     {
         // Sample the middle 80% of each edge, so tab headers and corners don't interfere.
@@ -89,7 +89,7 @@ public static class StashLocator
     }
 
     /// <summary>Average colour of the most saturated pixel across a vertical frame line.</summary>
-    static double[] LineColor(PixelBuffer pb, int x, int y0, int y1, int thick)
+    private static double[] LineColor(PixelBuffer pb, int x, int y0, int y1, int thick)
     {
         if (x < 0) return null;
         double r = 0, g = 0, b = 0; int n = 0;
@@ -121,14 +121,14 @@ public static class StashLocator
         return d;
     }
 
-    static int Sat(PixelBuffer pb, int x, int y)
+    private static int Sat(PixelBuffer pb, int x, int y)
     {
         int o = y * pb.Stride + x * 4;
         int b = pb.Px[o], g = pb.Px[o + 1], r = pb.Px[o + 2];
         return Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b));
     }
 
-    static int Bright(PixelBuffer pb, int x, int y)
+    private static int Bright(PixelBuffer pb, int x, int y)
     {
         int o = y * pb.Stride + x * 4;
         return Math.Max(pb.Px[o + 2], Math.Max(pb.Px[o + 1], pb.Px[o]));
@@ -137,7 +137,7 @@ public static class StashLocator
     // A coloured frame pixel is clearly more saturated than the pixels a few steps away on both sides.
     // A grey frame is only compared with the inside of the panel (dx, dy point inwards): outside it
     // there can be brighter UI, like the tab header strip above the top edge.
-    static bool Ridge(PixelBuffer pb, int x, int y, int dx, int dy, bool grey)
+    private static bool Ridge(PixelBuffer pb, int x, int y, int dx, int dy, bool grey)
     {
         if (grey)
         {
@@ -148,7 +148,7 @@ public static class StashLocator
         return s >= 50 && s - Sat(pb, x - dx, y - dy) >= 35 && s - Sat(pb, x + dx, y + dy) >= 35;
     }
 
-    static double ColScore(PixelBuffer pb, int x, int y0, int y1, int d, bool grey)
+    private static double ColScore(PixelBuffer pb, int x, int y0, int y1, int d, bool grey)
     {
         int hit = 0, n = 0;
         for (int y = Math.Max(0, y0); y < Math.Min(pb.Height, y1); y += 4)
@@ -159,7 +159,7 @@ public static class StashLocator
         return n == 0 ? 0 : (double)hit / n;
     }
 
-    static double RowScore(PixelBuffer pb, int y, int x0, int x1, int d, bool grey)
+    private static double RowScore(PixelBuffer pb, int y, int x0, int x1, int d, bool grey)
     {
         int hit = 0, n = 0;
         for (int x = Math.Max(0, x0); x < Math.Min(pb.Width, x1); x += 4)
@@ -171,13 +171,13 @@ public static class StashLocator
     }
 
     /// <summary>Column of the vertical frame line nearest <paramref name="guess"/>, or -1.</summary>
-    static int FindVertical(PixelBuffer pb, int guess, int range, int y0, int y1, int thick, bool grey, int inward)
+    private static int FindVertical(PixelBuffer pb, int guess, int range, int y0, int y1, int thick, bool grey, int inward)
     {
         int d = thick + 2, lo = Math.Max(d, guess - range), hi = Math.Min(pb.Width - 1 - d, guess + range);
         return Best(lo, hi, guess, thick, x => ColScore(pb, x, y0, y1, d * inward, grey));
     }
 
-    static int FindHorizontal(PixelBuffer pb, int guess, int range, int x0, int x1, int thick, bool grey, int inward)
+    private static int FindHorizontal(PixelBuffer pb, int guess, int range, int x0, int x1, int thick, bool grey, int inward)
     {
         int d = thick + 2, lo = Math.Max(d, guess - range), hi = Math.Min(pb.Height - 1 - d, guess + range);
         return Best(lo, hi, guess, thick, y => RowScore(pb, y, x0, x1, d * inward, grey));
@@ -189,7 +189,7 @@ public static class StashLocator
     /// nearby (tab header border) can be stronger than a dim grey frame. The frame is a few pixels thick,
     /// so the result is its first pixel.
     /// </summary>
-    static int Best(int lo, int hi, int guess, int maxThick, Func<int, double> score)
+    private static int Best(int lo, int hi, int guess, int maxThick, Func<int, double> score)
     {
         if (hi < lo) return -1;   // search window outside the picture
         double[] s = new double[hi - lo + 1];

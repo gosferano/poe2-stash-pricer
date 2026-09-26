@@ -13,7 +13,7 @@ namespace Poe2StashPricer.Detection;
 /// </summary>
 public static class SlotDetector
 {
-    static bool IsTinted(int r, int g, int b, int s)
+    private static bool IsTinted(int r, int g, int b, int s)
     {
         // Navy item background is very dark with blue clearly on top (≈ 8,7,30). Some tab panels are
         // bluish stone (≈ 33,33,43), so red/green must stay low for a pixel to count.
@@ -155,7 +155,7 @@ public static class SlotDetector
             }
         return n == 0 ? 0 : (double)hit / n;
     }
-    static bool[,] Dilate(bool[,] m)
+    private static bool[,] Dilate(bool[,] m)
     {
         int h = m.GetLength(0), w = m.GetLength(1);
         bool[,] o = new bool[h, w];
@@ -165,7 +165,7 @@ public static class SlotDetector
         return o;
     }
 
-    static bool[,] Erode(bool[,] m)
+    private static bool[,] Erode(bool[,] m)
     {
         int h = m.GetLength(0), w = m.GetLength(1);
         bool[,] o = new bool[h, w];
@@ -175,7 +175,7 @@ public static class SlotDetector
         return o;
     }
 
-    static void Visit(bool[,] on, int[,] label, Queue<Point> q, int id, int x, int y)
+    private static void Visit(bool[,] on, int[,] label, Queue<Point> q, int id, int x, int y)
     {
         if (x < 0 || y < 0 || y >= on.GetLength(0) || x >= on.GetLength(1)) return;
         if (!on[y, x] || label[y, x] != 0) return;

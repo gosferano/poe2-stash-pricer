@@ -33,7 +33,7 @@ public static class Grid
         return Math.Sqrt(Math.Max(0, sq / n - mean * mean));
     }
 
-    static Rectangle Offset(Rectangle r, Point by) { r.Offset(by); return r; }
+    private static Rectangle Offset(Rectangle r, Point by) { r.Offset(by); return r; }
 
     /// <summary>
     /// Splits an item area into slots of about <paramref name="slot"/> pixels. Touching or nearly touching
@@ -53,7 +53,7 @@ public static class Grid
         return cells;
     }
 
-    static List<int[]> Spans(PixelBuffer pb, Rectangle blob, double slot, int sensitivity, bool alongX)
+    private static List<int[]> Spans(PixelBuffer pb, Rectangle blob, double slot, int sensitivity, bool alongX)
     {
         int start = alongX ? blob.Left : blob.Top, len = alongX ? blob.Width : blob.Height;
         int guess = Math.Max(1, (int)Math.Round(len / slot));
@@ -272,14 +272,14 @@ public static class Grid
     /// Large icons hide most of the tint, so a detailed cell also counts as occupied,
     /// but only if some item background shows (textured panel stone has none).
     /// </summary>
-    static bool Occupied(PixelBuffer pb, Rectangle rect, ScanConfig cfg)
+    private static bool Occupied(PixelBuffer pb, Rectangle rect, ScanConfig cfg)
     {
         if (SlotDetector.RingTintFraction(pb, rect, cfg.TintSensitivity) >= 0.35) return true;
         if (SlotDetector.TintFraction(pb, rect, cfg.TintSensitivity, 0) < 0.06) return false;
         return SlotDetector.TintFraction(pb, rect, cfg.TintSensitivity) >= 0.25 || Busyness(pb, rect) >= cfg.Threshold;
     }
 
-    static List<double> Cluster(List<double> values, double tol)
+    private static List<double> Cluster(List<double> values, double tol)
     {
         values.Sort();
         List<double> centers = new List<double>();
@@ -297,14 +297,14 @@ public static class Grid
         return centers;
     }
 
-    static double Average(List<double> l)
+    private static double Average(List<double> l)
     {
         double s = 0;
         foreach (double v in l) s += v;
         return s / l.Count;
     }
 
-    static ProbeGroup Lattice(PixelBuffer pb, ScanConfig cfg, List<Rectangle> blobs, Point origin)
+    private static ProbeGroup Lattice(PixelBuffer pb, ScanConfig cfg, List<Rectangle> blobs, Point origin)
     {
         double cs = cfg.CellSize;
         List<double> xs = new List<double>(), ys = new List<double>(), sizes = new List<double>();
