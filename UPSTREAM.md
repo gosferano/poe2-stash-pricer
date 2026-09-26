@@ -36,7 +36,7 @@ Status: **done** = ported, **later** = planned for a later phase, **no** = inten
 | Upstream path | Here | Status | Notes |
 |---|---|---|---|
 | `src/Layouts.json` | `Poe2StashPricer.Core/Layouts.json` | done | Copied as-is, embedded as `Poe2StashPricer.Layouts.json`. |
-| `src/SlotDetector.cs` | `Poe2StashPricer.Core/Detection/PixelBuffer.cs`, `Detection/SlotDetector.cs` | later | Split: `PixelBuffer` gets its own file. |
+| `src/SlotDetector.cs` | `Poe2StashPricer.Core/Detection/PixelBuffer.cs`, `Detection/SlotDetector.cs` | done | Split: `PixelBuffer` gets its own file. |
 | `src/StashLocator.cs` | `Poe2StashPricer.Core/Detection/StashLocator.cs` | later | |
 | `src/DigitReader.cs` | `Poe2StashPricer.Core/Detection/DigitReader.cs` | later | |
 | `src/TabWatcher.cs` | `Poe2StashPricer.Core/Detection/TabWatcher.cs` | later | |
