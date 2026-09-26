@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Layouts.json" LogicalName="Poe2StashPricer.Layouts.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
   </ItemGroup>
 
