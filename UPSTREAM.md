@@ -53,7 +53,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `src/PriceService.cs` | `Poe2StashPricer.Core/Pricing/PriceTable.cs`, `Pricing/PriceService.cs` | done | Split: `PriceInfo` and `PriceTable` get their own file. |
 | `src/Settings.cs` | `Poe2StashPricer.Core/Storage/AppSettings.cs`, `Storage/AppPaths.cs` | done | Split: the data folder moves to `AppPaths`. |
 | `src/Log.cs` | `Poe2StashPricer.Core/Storage/Log.cs` | done | |
-| `src/Native.cs` | `Poe2StashPricer.Core/Platform/*.cs` + app `Platform/` | part | Not ported as a file: replaced by interfaces (done) and their Linux implementations (Phase 2). |
+| `src/Native.cs` | `Poe2StashPricer.Core/Platform/*.cs` + `Poe2StashPricer.App/Platform/Linux/` | done | Not ported as a file: replaced by interfaces and their Linux implementations. |
 | `src/Hotkeys.cs` | `Poe2StashPricer.Core/Storage/Hotkey.cs` | done | Only the neutral key representation is kept; the WinForms `Keys` helpers and `KeyCaptureForm` are dropped. |
 | `src/MainForm.cs` | Core session controller + Avalonia main window | later | Phase 3/4: orchestration moves to Core, UI to Avalonia. |
 | `src/OverlayForm.cs` | Avalonia or layer-shell overlay | later | Phase 4. |
@@ -65,6 +65,36 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `.github/workflows/build.yml` | — | no | Windows build and release workflow. |
 | — (new) | `Poe2StashPricer.Core/Storage/Json.cs` | done | The shared `System.Text.Json` options, in place of upstream's per-file `new JavaScriptSerializer()`. |
 | `tools/` | — | no | `DetectTest`, `LayoutTool`, `make-icon.ps1`, `make-layouts.ps1`: development tools, not ported. |
+
+## How the Linux platform layer answers each Win32 call
+
+Measured against the running game on Hyprland; see the notes below for what is not settled.
+
+| Upstream | Here | Notes |
+|---|---|---|
+| `FindGameWindow`, `IsGameWindow` | `_NET_CLIENT_LIST` + `WM_CLASS` | Under Proton the game is an XWayland client called `steam_app_<id>`. Class and title are settings. |
+| `ClientRectOnScreen` | `XGetWindowAttributes` + `XTranslateCoordinates` | |
+| `GetForegroundWindow` | `_NET_ACTIVE_WINDOW` on the root | |
+| `SetForegroundWindow`, `ShowWindow` | — | No neutral equivalent: Hyprland ignores the EWMH `_NET_ACTIVE_WINDOW` request. The app reports that the game is not in front instead of raising it. |
+| `Graphics.CopyFromScreen` | `XGetImage` on the game window | 26 ms for 3440x1440. Reading the root fails with BadMatch (Xwayland is rootless), so only the game is ever in the picture and the overlay cannot contaminate it. XComposite was measured and returns byte-identical pixels, so it is not used. |
+| `SendInput` (mouse) | uinput absolute pointer | Axes span a constant 0..65535 and each move is scaled against the desktop's current size, as upstream did with `SM_CXVIRTUALSCREEN`. |
+| `SendInput` (Ctrl+C) | uinput keyboard | |
+| `GetAsyncKeyState` | `XQueryKeymap`, `XQueryPointer` | Both stay correct while the game has focus. |
+| `GetClipboardSequenceNumber` | XFixes selection-owner notifications | A real counter, so a repeated identical copy is still seen. |
+| `Clipboard.GetText` | `XConvertSelection` for `UTF8_STRING` | |
+| `Clipboard.SetDataObject` with the history hints | owning `CLIPBOARD` and answering requests, offering `x-kde-passwordManagerHint` | Works between X clients. It does **not** reach Wayland applications; see below. |
+| `SHQueryUserNotificationState` | — | Dropped with the exclusive-fullscreen concept. |
+
+### The clipboard does not cross to Wayland
+
+The game and this app are both X clients, so the scan reads what the game copies without any bridge. But on
+this Hyprland session the XWayland clipboard is not mirrored to the Wayland one in either direction: a text
+put on the Wayland clipboard with `wl-copy` cannot be read through X, and a selection this app owns is
+invisible to `wl-paste`. Worse, taking the X selection clears whatever Wayland applications had copied.
+
+So a scan currently destroys the user's clipboard rather than restoring it. Reading the game is unaffected.
+Fixing it needs the Wayland side (`wlr-data-control` / `ext-data-control`, which `wl-clipboard` itself uses
+and both Hyprland and KWin implement); that is not written yet.
 
 ## Deliberate behaviour changes
 
@@ -78,6 +108,8 @@ Recorded here so they are not mistaken for porting bugs when comparing with upst
 - `TabLibrary` no longer touches the per-tab PNG screenshots that upstream versions before 1.2 left behind:
   neither the item-mask migration in `LoadLearned` nor the deletions in `Save`, `Delete` and `DeleteAll`.
 - `AppSettings.ScanKey`/`OverlayKey` were WinForms `Keys` integers; they are now a neutral `Hotkey` record.
+- `AppSettings` gained `GameWindowClass` and `GameWindowTitle`: upstream matched the process name, which says
+  nothing about an X window.
 - `ScanConfig.HotkeyVk` is gone: which key started the scan is the `IKeyState` implementation's business
   (`ScanTriggerHeld`), not the scanner's.
 - poe.ninja rate limiting is detected from `HttpResponseMessage.StatusCode` (429/503) and
