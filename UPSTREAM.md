@@ -44,7 +44,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `src/Scanner.cs` | `Poe2StashPricer.Core/Detection/Grid.cs`, `Scanning/{Scanner,ScanConfig,ScanPlan,ProbeGroup,ScanItem,ScanResult}.cs` | later | Split by type; `Grid.Capture` moves behind `IScreenCapture`. |
 | `src/TabLibrary.cs` | `Poe2StashPricer.Core/Tabs/TabProfile.cs`, `Tabs/TabLibrary.cs` | later | Split: `TabProfile` gets its own file. |
 | `src/TabResults.cs` | `Poe2StashPricer.Core/Tabs/ResultStore.cs` | later | Renamed after its main type; also holds `SavedItem`, `TabResult`, `PricedItem`. |
-| `src/ItemParser.cs` | `Poe2StashPricer.Core/Pricing/ItemParser.cs` | later | |
+| `src/ItemParser.cs` | `Poe2StashPricer.Core/Pricing/ItemParser.cs` | done | Namespace rename only. |
 | `src/PriceService.cs` | `Poe2StashPricer.Core/Pricing/PriceTable.cs`, `Pricing/PriceService.cs` | later | Split: `PriceInfo` and `PriceTable` get their own file. |
 | `src/Settings.cs` | `Poe2StashPricer.Core/Storage/AppSettings.cs`, `Storage/AppPaths.cs` | done | Split: the data folder moves to `AppPaths`. |
 | `src/Log.cs` | `Poe2StashPricer.Core/Storage/Log.cs` | done | |
