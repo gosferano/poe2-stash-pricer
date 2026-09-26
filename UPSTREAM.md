@@ -16,8 +16,10 @@ Upstream's git history is not imported; files were copied in from a clone of the
   each file's namespace follows its folder: `Poe2StashPricer.Detection`, `.Scanning`, `.Tabs`, `.Pricing`,
   `.Platform`, `.Storage`. A ported file therefore differs from upstream in its namespace line and in the
   `using` directives for the folders it reaches into. The app project uses `Poe2StashPricer.App.*`.
-- **Structure.** Ported files keep upstream's class names, logic and comments. Nothing is reformatted or
-  modernised that does not have to change, and `<Nullable>` is not enabled for ported code.
+- **Structure.** Ported files keep upstream's class names, logic and comments, and `<Nullable>` is not enabled
+  for ported code. Two project-wide style rules are applied to every file, ported ones included, and are the
+  only reformatting done: file-scoped namespaces and explicit `private`/`internal` modifiers (see
+  `.editorconfig`). Both shift indentation, so comparing a ported file with upstream wants `diff -w`.
 - **Platform calls.** Everything that touched Win32 (`Native.*`), WinForms or `System.Drawing.Bitmap` now goes
   through interfaces in `Poe2StashPricer.Core/Platform/`, implemented in the app project under `Platform/`.
 - **Images.** `System.Drawing.Rectangle/Point/Size` are kept (they come from `System.Drawing.Primitives` and work

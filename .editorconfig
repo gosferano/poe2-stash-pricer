@@ -1,0 +1,25 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,axaml,xml,csproj,props,slnx}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+# File-scoped namespaces everywhere.
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Say private/internal rather than leaving it to the reader.
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
+
+# A file's namespace follows its folder.
+dotnet_style_namespace_match_folder = true:warning
