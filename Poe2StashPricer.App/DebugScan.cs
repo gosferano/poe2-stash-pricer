@@ -63,6 +63,10 @@ internal static class DebugScan
         Dictionary<string, TabProfile> known = TabLibrary.LoadAll();
         Scanner scanner = new Scanner(cfg, platform.Capture, platform.Input, platform.Keys, platform.Clipboard, platform.Game);
 
+        string? before = platform.Clipboard.GetText();
+        Console.WriteLine("clipboard before the scan: "
+                          + (before == null ? "(nothing)" : before.Length + " chars, \"" + Head(before) + "\""));
+
         Stopwatch sw = Stopwatch.StartNew();
         ScanResult res = scanner.Run(known.Values, it => prices?.Lookup(it), null);
         sw.Stop();
@@ -104,10 +108,18 @@ internal static class DebugScan
             // A clipboard belongs to a running program: staying alive is what lets the restored text be
             // read by anything else. The real app is long-lived, so this only matters for this command.
             Console.WriteLine();
+            Console.WriteLine("clipboard after the scan:  "
+                              + (platform.Clipboard.GetText() is string t ? t.Length + " chars, \"" + Head(t) + "\"" : "(nothing)"));
             Console.WriteLine("holding the clipboard for " + holdSeconds + " s (the app owns the selection)...");
             System.Threading.Thread.Sleep(holdSeconds * 1000);
         }
         return 0;
+    }
+
+    private static string Head(string s)
+    {
+        s = s.Replace("\n", " / ");
+        return s.Length > 40 ? s.Substring(0, 40) + "..." : s;
     }
 
     private static string FirstLeague()
