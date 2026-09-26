@@ -45,10 +45,10 @@ Status: **done** = ported, **later** = planned for a later phase, **no** = inten
 | `src/TabResults.cs` | `Poe2StashPricer.Core/Tabs/ResultStore.cs` | later | Renamed after its main type; also holds `SavedItem`, `TabResult`, `PricedItem`. |
 | `src/ItemParser.cs` | `Poe2StashPricer.Core/Pricing/ItemParser.cs` | later | |
 | `src/PriceService.cs` | `Poe2StashPricer.Core/Pricing/PriceTable.cs`, `Pricing/PriceService.cs` | later | Split: `PriceInfo` and `PriceTable` get their own file. |
-| `src/Settings.cs` | `Poe2StashPricer.Core/Storage/AppSettings.cs`, `Storage/AppPaths.cs` | later | Split: the data folder moves to `AppPaths`. |
-| `src/Log.cs` | `Poe2StashPricer.Core/Storage/Log.cs` | later | |
+| `src/Settings.cs` | `Poe2StashPricer.Core/Storage/AppSettings.cs`, `Storage/AppPaths.cs` | done | Split: the data folder moves to `AppPaths`. |
+| `src/Log.cs` | `Poe2StashPricer.Core/Storage/Log.cs` | done | |
 | `src/Native.cs` | `Poe2StashPricer.Core/Platform/*.cs` + app `Platform/` | later | Replaced by interfaces and their Linux implementations, not ported as a file. |
-| `src/Hotkeys.cs` | `Poe2StashPricer.Core/Storage/Hotkey.cs` | later | Only the neutral key representation is kept; the WinForms `Keys` helpers and `KeyCaptureForm` are dropped. |
+| `src/Hotkeys.cs` | `Poe2StashPricer.Core/Storage/Hotkey.cs` | done | Only the neutral key representation is kept; the WinForms `Keys` helpers and `KeyCaptureForm` are dropped. |
 | `src/MainForm.cs` | Core session controller + Avalonia main window | later | Phase 3/4: orchestration moves to Core, UI to Avalonia. |
 | `src/OverlayForm.cs` | Avalonia or layer-shell overlay | later | Phase 4. |
 | `src/Theme.cs` | Avalonia styles | later | Phase 4. |
@@ -57,6 +57,7 @@ Status: **done** = ported, **later** = planned for a later phase, **no** = inten
 | `src/app.manifest`, `src/app.ico` | — | no | Windows-specific. |
 | `build.ps1` | — | no | Replaced by `dotnet build`. |
 | `.github/workflows/build.yml` | — | no | Windows build and release workflow. |
+| — (new) | `Poe2StashPricer.Core/Storage/Json.cs` | done | The shared `System.Text.Json` options, in place of upstream's per-file `new JavaScriptSerializer()`. |
 | `tools/` | — | no | `DetectTest`, `LayoutTool`, `make-icon.ps1`, `make-layouts.ps1`: development tools, not ported. |
 
 ## Deliberate behaviour changes
