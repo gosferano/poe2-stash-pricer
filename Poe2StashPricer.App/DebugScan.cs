@@ -17,7 +17,7 @@ namespace Poe2StashPricer.App;
 /// </summary>
 internal static class DebugScan
 {
-    public static int Run(bool withPrices)
+    public static int Run(bool withPrices, int holdSeconds = 0)
     {
         AppSettings settings = AppSettings.Load();
         using LinuxPlatform platform = LinuxPlatform.Create(settings);
@@ -98,6 +98,15 @@ internal static class DebugScan
         Console.WriteLine();
         Console.WriteLine(res.Items.Count + " items" + (withPrices ? ", " + total.ToString("0.##") + " div in total" : ""));
         if (res.Aborted) Console.WriteLine("(the scan was stopped early)");
+
+        if (holdSeconds > 0)
+        {
+            // A clipboard belongs to a running program: staying alive is what lets the restored text be
+            // read by anything else. The real app is long-lived, so this only matters for this command.
+            Console.WriteLine();
+            Console.WriteLine("holding the clipboard for " + holdSeconds + " s (the app owns the selection)...");
+            System.Threading.Thread.Sleep(holdSeconds * 1000);
+        }
         return 0;
     }
 
