@@ -13,8 +13,9 @@ internal static class DebugClipboard
     {
         AppSettings settings = AppSettings.Load();
         using LinuxPlatform platform = LinuxPlatform.Create(settings);
-        X11Clipboard clip = platform.Clipboard;
+        Poe2StashPricer.Platform.IClipboard clip = platform.Clipboard;
 
+        Console.WriteLine("reached through: " + platform.ClipboardKind);
         Console.WriteLine("change count at start: " + clip.ChangeCount);
         string? before = clip.GetText();
         Console.WriteLine("clipboard now: " + (before == null ? "(nothing)" : "[" + before + "]"));
