@@ -42,7 +42,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `src/DigitReader.cs` | `Poe2StashPricer.Core/Detection/DigitReader.cs` | later | |
 | `src/TabWatcher.cs` | `Poe2StashPricer.Core/Detection/TabWatcher.cs` | later | |
 | `src/Scanner.cs` | `Poe2StashPricer.Core/Detection/Grid.cs`, `Scanning/{Scanner,ScanConfig,ScanPlan,ProbeGroup,ScanItem,ScanResult}.cs` | later | Split by type; `Grid.Capture` moves behind `IScreenCapture`. |
-| `src/TabLibrary.cs` | `Poe2StashPricer.Core/Tabs/TabProfile.cs`, `Tabs/TabLibrary.cs` | later | Split: `TabProfile` gets its own file. |
+| `src/TabLibrary.cs` | `Poe2StashPricer.Core/Tabs/TabProfile.cs`, `Tabs/TabLibrary.cs` | done | Split: `TabProfile` gets its own file. |
 | `src/TabResults.cs` | `Poe2StashPricer.Core/Tabs/ResultStore.cs` | later | Renamed after its main type; also holds `SavedItem`, `TabResult`, `PricedItem`. |
 | `src/ItemParser.cs` | `Poe2StashPricer.Core/Pricing/ItemParser.cs` | done | Namespace rename only. |
 | `src/PriceService.cs` | `Poe2StashPricer.Core/Pricing/PriceTable.cs`, `Pricing/PriceService.cs` | done | Split: `PriceInfo` and `PriceTable` get their own file. |
@@ -70,7 +70,8 @@ Recorded here so they are not mistaken for porting bugs when comparing with upst
 - No "must run on an STA thread" requirement: scans run on a background `Task`.
 - `ResultStore.Load` no longer converts timestamps with `ToLocalTime()`; that worked around
   `JavaScriptSerializer` returning UTC `/Date()/` values.
-- `TabLibrary.LoadLearned` no longer migrates the pre-1.2 per-tab PNG screenshots.
+- `TabLibrary` no longer touches the per-tab PNG screenshots that upstream versions before 1.2 left behind:
+  neither the item-mask migration in `LoadLearned` nor the deletions in `Save`, `Delete` and `DeleteAll`.
 - `AppSettings.ScanKey`/`OverlayKey` were WinForms `Keys` integers; they are now a neutral `Hotkey` record.
 - poe.ninja rate limiting is detected from `HttpResponseMessage.StatusCode` (429/503) and
   `Headers.RetryAfter` instead of `WebException`.
