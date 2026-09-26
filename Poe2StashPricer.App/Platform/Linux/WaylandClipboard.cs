@@ -45,39 +45,39 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void SendFn(IntPtr data, IntPtr proxy, IntPtr mime, int fd);
 
-    private readonly IntPtr deviceListener, offerListener, sourceListener;
+    private readonly IntPtr _deviceListener, _offerListener, _sourceListener;
 
-    private readonly WaylandConnection connection;
-    private readonly DataControl protocol;
-    private readonly Thread loop;
-    private volatile bool stop;
+    private readonly WaylandConnection _connection;
+    private readonly DataControl _protocol;
+    private readonly Thread _loop;
+    private volatile bool _stop;
 
-    private readonly object sync = new object();
-    private IntPtr device;
-    private IntPtr currentOffer;
-    private readonly Dictionary<IntPtr, List<string>> offerMimes = new();
-    private readonly HashSet<IntPtr> liveOffers = new();
-    private IntPtr source;
-    private string offered = "";
-    private long changes;
+    private readonly object _sync = new object();
+    private IntPtr _device;
+    private IntPtr _currentOffer;
+    private readonly Dictionary<IntPtr, List<string>> _offerMimes = new Dictionary<IntPtr, List<string>>();
+    private readonly HashSet<IntPtr> _liveOffers = new HashSet<IntPtr>();
+    private IntPtr _source;
+    private string _offered = "";
+    private long _changes;
 
     private WaylandClipboard(WaylandConnection connection, DataControl protocol)
     {
-        this.connection = connection;
-        this.protocol = protocol;
+        _connection = connection;
+        _protocol = protocol;
 
-        deviceListener = Wl.Listener(new ObjectFn(OnDataOffer), new ObjectFn(OnSelection),
+        _deviceListener = Wl.Listener(new ObjectFn(OnDataOffer), new ObjectFn(OnSelection),
                                      new VoidFn(OnFinished), new ObjectFn(OnPrimarySelection));
-        offerListener = Wl.Listener(new OfferFn(OnOfferMime));
-        sourceListener = Wl.Listener(new SendFn(OnSend), new VoidFn(OnCancelled));
+        _offerListener = Wl.Listener(new OfferFn(OnOfferMime));
+        _sourceListener = Wl.Listener(new SendFn(OnSend), new VoidFn(OnCancelled));
 
-        device = Wl.Request(connection.Manager, DataControl.ManagerGetDataDevice, protocol.Device.Ptr,
+        _device = Wl.Request(connection.Manager, DataControl.ManagerGetDataDevice, protocol.Device.Ptr,
                             new[] { WlArgument.NewId(), WlArgument.Ptr(connection.Seat) });
-        Wl.wl_proxy_add_listener(device, deviceListener, IntPtr.Zero);
+        Wl.wl_proxy_add_listener(_device, _deviceListener, IntPtr.Zero);
         Wl.wl_display_roundtrip(connection.Display);
 
-        loop = new Thread(Loop) { IsBackground = true, Name = "wayland-clipboard" };
-        loop.Start();
+        _loop = new Thread(Loop) { IsBackground = true, Name = "wayland-clipboard" };
+        _loop.Start();
     }
 
     public static WaylandClipboard? TryCreate()
@@ -99,18 +99,18 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
         }
     }
 
-    public string ProtocolName => protocol.Manager.Name;
+    public string ProtocolName => _protocol.Manager.Name;
 
     /// <summary>Goes up whenever the compositor reports a new selection.</summary>
-    public ulong ChangeCount => (ulong)Interlocked.Read(ref changes);
+    public ulong ChangeCount => (ulong)Interlocked.Read(ref _changes);
 
     private void Loop()
     {
-        while (!stop)
+        while (!_stop)
         {
-            if (Wl.wl_display_dispatch(connection.Display) < 0)
+            if (Wl.wl_display_dispatch(_connection.Display) < 0)
             {
-                Log.Write("the Wayland connection ended (" + Wl.wl_display_get_error(connection.Display) + ")");
+                Log.Write("the Wayland connection ended (" + Wl.wl_display_get_error(_connection.Display) + ")");
                 return;
             }
         }
@@ -120,19 +120,19 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
 
     private void OnDataOffer(IntPtr data, IntPtr proxy, IntPtr offer)
     {
-        lock (sync)
+        lock (_sync)
         {
-            offerMimes[offer] = new List<string>();
-            liveOffers.Add(offer);
+            _offerMimes[offer] = new List<string>();
+            _liveOffers.Add(offer);
         }
-        Wl.wl_proxy_add_listener(offer, offerListener, IntPtr.Zero);
+        Wl.wl_proxy_add_listener(offer, _offerListener, IntPtr.Zero);
     }
 
     /// <summary>Caller holds the lock. Destroying an offer twice would take the process with it.</summary>
     private void DropOffer(IntPtr offer)
     {
-        if (offer == IntPtr.Zero || !liveOffers.Remove(offer)) return;
-        offerMimes.Remove(offer);
+        if (offer == IntPtr.Zero || !_liveOffers.Remove(offer)) return;
+        _offerMimes.Remove(offer);
         Wl.Destructor(offer, DataControl.OfferDestroy);
     }
 
@@ -140,26 +140,26 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
     {
         string? m = Marshal.PtrToStringAnsi(mime);
         if (m == null) return;
-        lock (sync)
+        lock (_sync)
         {
-            if (offerMimes.TryGetValue(offer, out List<string>? list)) list.Add(m);
+            if (_offerMimes.TryGetValue(offer, out List<string>? list)) list.Add(m);
         }
     }
 
     private void OnSelection(IntPtr data, IntPtr proxy, IntPtr offer)
     {
-        lock (sync)
+        lock (_sync)
         {
-            if (currentOffer != offer) DropOffer(currentOffer);
-            currentOffer = offer;
+            if (_currentOffer != offer) DropOffer(_currentOffer);
+            _currentOffer = offer;
         }
-        Interlocked.Increment(ref changes);
+        Interlocked.Increment(ref _changes);
     }
 
     /// <summary>Middle-click paste, which this app has no use for; the offer is dropped.</summary>
     private void OnPrimarySelection(IntPtr data, IntPtr proxy, IntPtr offer)
     {
-        lock (sync) DropOffer(offer);
+        lock (_sync) DropOffer(offer);
     }
 
     private void OnFinished(IntPtr data, IntPtr proxy)
@@ -173,7 +173,7 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
         try
         {
             string m = Marshal.PtrToStringAnsi(mime) ?? "";
-            string give = m == PasswordHint ? "secret" : offered;
+            string give = m == PasswordHint ? "secret" : _offered;
             byte[] bytes = Encoding.UTF8.GetBytes(give);
             int written = 0;
             while (written < bytes.Length)
@@ -190,12 +190,12 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
 
     private void OnCancelled(IntPtr data, IntPtr proxy)
     {
-        lock (sync)
+        lock (_sync)
         {
-            if (source == proxy)
+            if (_source == proxy)
             {
-                Wl.Destructor(source, DataControl.SourceDestroy);
-                source = IntPtr.Zero;
+                Wl.Destructor(_source, DataControl.SourceDestroy);
+                _source = IntPtr.Zero;
             }
         }
     }
@@ -210,15 +210,15 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
     /// </summary>
     public string? GetText()
     {
-        lock (sync) return GetTextLocked();
+        lock (_sync) return GetTextLocked();
     }
 
     private string? GetTextLocked()
     {
-        IntPtr offer = currentOffer;
+        IntPtr offer = _currentOffer;
         if (offer == IntPtr.Zero) return null;
         string? mime = null;
-        if (offerMimes.TryGetValue(offer, out List<string>? mimes))
+        if (_offerMimes.TryGetValue(offer, out List<string>? mimes))
             foreach (string candidate in TextMimes)
                 if (mimes.Contains(candidate)) { mime = candidate; break; }
         if (mime == null) return null;
@@ -232,7 +232,7 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
             {
                 Wl.Request(offer, DataControl.OfferReceive, IntPtr.Zero,
                            new[] { WlArgument.Str(mimePtr), WlArgument.Fd(fds[1]) });
-                Wl.wl_display_flush(connection.Display);
+                Wl.wl_display_flush(_connection.Display);
             }
             finally { Marshal.FreeHGlobal(mimePtr); }
 
@@ -261,23 +261,23 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
 
     public void SetText(string text, bool sensitive)
     {
-        lock (sync)
+        lock (_sync)
         {
-            offered = text;
-            if (source != IntPtr.Zero)
+            _offered = text;
+            if (_source != IntPtr.Zero)
             {
-                Wl.Destructor(source, DataControl.SourceDestroy);
-                source = IntPtr.Zero;
+                Wl.Destructor(_source, DataControl.SourceDestroy);
+                _source = IntPtr.Zero;
             }
-            source = Wl.Request(connection.Manager, DataControl.ManagerCreateDataSource, protocol.Source.Ptr,
+            _source = Wl.Request(_connection.Manager, DataControl.ManagerCreateDataSource, _protocol.Source.Ptr,
                                 new[] { WlArgument.NewId() });
-            Wl.wl_proxy_add_listener(source, sourceListener, IntPtr.Zero);
+            Wl.wl_proxy_add_listener(_source, _sourceListener, IntPtr.Zero);
 
-            foreach (string mime in TextMimes) Offer(source, mime);
-            if (sensitive) Offer(source, PasswordHint);
+            foreach (string mime in TextMimes) Offer(_source, mime);
+            if (sensitive) Offer(_source, PasswordHint);
 
-            Wl.Request(device, DataControl.DeviceSetSelection, IntPtr.Zero, new[] { WlArgument.Ptr(source) });
-            Wl.wl_display_flush(connection.Display);
+            Wl.Request(_device, DataControl.DeviceSetSelection, IntPtr.Zero, new[] { WlArgument.Ptr(_source) });
+            Wl.wl_display_flush(_connection.Display);
         }
     }
 
@@ -290,17 +290,17 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
 
     public void Dispose()
     {
-        stop = true;
-        lock (sync)
+        _stop = true;
+        lock (_sync)
         {
-            if (source != IntPtr.Zero) Wl.Destructor(source, DataControl.SourceDestroy);
-            DropOffer(currentOffer);
-            currentOffer = IntPtr.Zero;
-            if (device != IntPtr.Zero) Wl.Destructor(device, DataControl.DeviceDestroy);
-            source = device = IntPtr.Zero;
+            if (_source != IntPtr.Zero) Wl.Destructor(_source, DataControl.SourceDestroy);
+            DropOffer(_currentOffer);
+            _currentOffer = IntPtr.Zero;
+            if (_device != IntPtr.Zero) Wl.Destructor(_device, DataControl.DeviceDestroy);
+            _source = _device = IntPtr.Zero;
         }
-        Wl.wl_display_flush(connection.Display);
-        loop.Join(500);
-        connection.Dispose();
+        Wl.wl_display_flush(_connection.Display);
+        _loop.Join(500);
+        _connection.Dispose();
     }
 }

@@ -16,27 +16,27 @@ namespace Poe2StashPricer.App.Platform.Linux;
 /// </summary>
 internal sealed class X11ScreenCapture : IScreenCapture
 {
-    private readonly X11Display display;
-    private readonly X11GameWindow game;
+    private readonly X11Display _display;
+    private readonly X11GameWindow _game;
 
     public X11ScreenCapture(X11Display display, X11GameWindow game)
     {
-        this.display = display;
-        this.game = game;
+        _display = display;
+        _game = game;
     }
 
     /// <param name="screenRect">Wanted area in screen coordinates; it is read out of the game window.</param>
     public PixelBuffer Capture(Rectangle screenRect)
     {
-        Rectangle win = game.ClientRectOnScreen();
+        Rectangle win = _game.ClientRectOnScreen();
         if (win.IsEmpty) throw new InvalidOperationException("the game window is gone");
 
         Rectangle local = new Rectangle(screenRect.X - win.X, screenRect.Y - win.Y,
                                         Math.Max(1, screenRect.Width), Math.Max(1, screenRect.Height));
-        lock (display.Sync)
+        lock (_display.Sync)
         {
             X11Errors.Clear();
-            IntPtr img = X11.XGetImage(display.Handle, game.Handle, local.X, local.Y,
+            IntPtr img = X11.XGetImage(_display.Handle, _game.Handle, local.X, local.Y,
                                        (uint)local.Width, (uint)local.Height, X11.AllPlanes, X11.ZPixmap);
             if (img == IntPtr.Zero)
                 throw new InvalidOperationException("the game window could not be captured: "

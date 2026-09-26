@@ -12,12 +12,12 @@ internal sealed class X11KeyState : IKeyState
     private const uint ShiftMask = 1 << 0, ControlMask = 1 << 2, Mod1Mask = 1 << 3;   // Mod1 is Alt
     private const uint ButtonMask = 0x1f00;                                           // buttons 1-5
 
-    private readonly X11Display display;
-    private readonly byte[] keys = new byte[32];
+    private readonly X11Display _display;
+    private readonly byte[] _keys = new byte[32];
 
     public X11KeyState(X11Display display)
     {
-        this.display = display;
+        _display = display;
     }
 
     /// <summary>The keycode of the scan hotkey, so holding it can be waited out; 0 when it is not bound here.</summary>
@@ -33,28 +33,28 @@ internal sealed class X11KeyState : IKeyState
 
     public int KeyCode(string keysymName)
     {
-        lock (display.Sync)
+        lock (_display.Sync)
         {
             ulong sym = X11.XStringToKeysym(keysymName);
-            return sym == 0 ? 0 : (int)X11.XKeysymToKeycode(display.Handle, sym);
+            return sym == 0 ? 0 : (int)X11.XKeysymToKeycode(_display.Handle, sym);
         }
     }
 
     private bool IsDown(int keycode)
     {
         if (keycode <= 0 || keycode > 255) return false;
-        lock (display.Sync)
+        lock (_display.Sync)
         {
-            X11.XQueryKeymap(display.Handle, keys);
-            return (keys[keycode / 8] & (1 << (keycode % 8))) != 0;
+            X11.XQueryKeymap(_display.Handle, _keys);
+            return (_keys[keycode / 8] & (1 << (keycode % 8))) != 0;
         }
     }
 
     private uint PointerMask()
     {
-        lock (display.Sync)
+        lock (_display.Sync)
         {
-            if (!X11.XQueryPointer(display.Handle, display.Root, out _, out _, out _, out _, out _, out _, out uint mask))
+            if (!X11.XQueryPointer(_display.Handle, _display.Root, out _, out _, out _, out _, out _, out _, out uint mask))
                 return 0;
             return mask;
         }

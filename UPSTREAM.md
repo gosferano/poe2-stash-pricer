@@ -16,6 +16,9 @@ Upstream's git history is not imported; files were copied in from a clone of the
   each file's namespace follows its folder: `Poe2StashPricer.Detection`, `.Scanning`, `.Tabs`, `.Pricing`,
   `.Platform`, `.Storage`. A ported file therefore differs from upstream in its namespace line and in the
   `using` directives for the folders it reaches into. The app project uses `Poe2StashPricer.App.*`.
+- **Naming.** Private fields are `_camelCase` and constants are PascalCase, except where a constant mirrors a
+  C header (`EV_KEY`, `O_WRONLY`, `ZPixmap`, `XA_ATOM`, `WL_REGISTRY_BIND`): those keep the spelling the
+  header uses, so they can be checked against it. `var` and target-typed `new()` are not used.
 - **Structure.** Ported files keep upstream's class names, logic and comments, and `<Nullable>` is not enabled
   for ported code. Two project-wide style rules are applied to every file, ported ones included, and are the
   only reformatting done: file-scoped namespaces and explicit `private`/`internal` modifiers (see

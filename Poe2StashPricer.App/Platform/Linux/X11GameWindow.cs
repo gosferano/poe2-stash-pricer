@@ -13,34 +13,34 @@ namespace Poe2StashPricer.App.Platform.Linux;
 /// </summary>
 internal sealed class X11GameWindow : IGameWindow
 {
-    private readonly X11Display display;
-    private readonly string wmClass;
-    private readonly string title;
-    private IntPtr window;
+    private readonly X11Display _display;
+    private readonly string _wmClass;
+    private readonly string _title;
+    private IntPtr _window;
 
     public X11GameWindow(X11Display display, string wmClass, string title)
     {
-        this.display = display;
-        this.wmClass = wmClass ?? "";
-        this.title = title ?? "";
+        _display = display;
+        _wmClass = wmClass ?? "";
+        _title = title ?? "";
     }
 
-    public IntPtr Handle => window;
+    public IntPtr Handle => _window;
 
     public bool Find()
     {
         // A window we already found stays good while it is still listed and still viewable.
-        if (window != IntPtr.Zero && Describe(window) != null) return true;
+        if (_window != IntPtr.Zero && Describe(_window) != null) return true;
 
-        window = IntPtr.Zero;
-        foreach (IntPtr w in display.GetWindows(display.Root, "_NET_CLIENT_LIST"))
+        _window = IntPtr.Zero;
+        foreach (IntPtr w in _display.GetWindows(_display.Root, "_NET_CLIENT_LIST"))
         {
-            string cls = display.GetText(w, "WM_CLASS") ?? "";
-            string name = display.GetText(w, "_NET_WM_NAME") ?? display.GetText(w, "WM_NAME") ?? "";
-            bool matches = (wmClass.Length > 0 && cls.Contains(wmClass, StringComparison.OrdinalIgnoreCase))
-                           || (title.Length > 0 && name.Contains(title, StringComparison.OrdinalIgnoreCase));
+            string cls = _display.GetText(w, "WM_CLASS") ?? "";
+            string name = _display.GetText(w, "_NET_WM_NAME") ?? _display.GetText(w, "WM_NAME") ?? "";
+            bool matches = (_wmClass.Length > 0 && cls.Contains(_wmClass, StringComparison.OrdinalIgnoreCase))
+                           || (_title.Length > 0 && name.Contains(_title, StringComparison.OrdinalIgnoreCase));
             if (!matches) continue;
-            window = w;
+            _window = w;
             Log.Write("game window 0x" + w.ToString("x") + " found: class " + cls + ", title " + name
                       + ", " + (Describe(w) ?? "no process"));
             return true;
@@ -51,7 +51,7 @@ internal sealed class X11GameWindow : IGameWindow
     /// <summary>The process behind a window, for the log. Also confirms the window is still there.</summary>
     private string? Describe(IntPtr w)
     {
-        uint pid = display.GetCardinal(w, "_NET_WM_PID");
+        uint pid = _display.GetCardinal(w, "_NET_WM_PID");
         if (pid == 0) return null;
         try { return "pid " + pid + " (" + File.ReadAllText("/proc/" + pid + "/comm").Trim() + ")"; }
         catch { return null; }
@@ -63,18 +63,18 @@ internal sealed class X11GameWindow : IGameWindow
     /// </summary>
     public Rectangle ClientRectOnScreen()
     {
-        if (window == IntPtr.Zero && !Find()) return Rectangle.Empty;
-        lock (display.Sync)
+        if (_window == IntPtr.Zero && !Find()) return Rectangle.Empty;
+        lock (_display.Sync)
         {
             X11Errors.Clear();
-            if (X11.XGetWindowAttributes(display.Handle, window, out X11.XWindowAttributes a) == 0
+            if (X11.XGetWindowAttributes(_display.Handle, _window, out X11.XWindowAttributes a) == 0
                 || X11Errors.Last != null)
             {
-                window = IntPtr.Zero;   // it went away between the search and now
+                _window = IntPtr.Zero;   // it went away between the search and now
                 return Rectangle.Empty;
             }
             if (a.map_state != X11.IsViewable) return Rectangle.Empty;
-            if (!X11.XTranslateCoordinates(display.Handle, window, a.root, 0, 0, out int x, out int y, out _))
+            if (!X11.XTranslateCoordinates(_display.Handle, _window, a.root, 0, 0, out int x, out int y, out _))
                 return Rectangle.Empty;
             return new Rectangle(x, y, a.width, a.height);
         }
@@ -86,18 +86,18 @@ internal sealed class X11GameWindow : IGameWindow
     /// </summary>
     public bool IsForeground()
     {
-        if (window == IntPtr.Zero) return false;
-        IntPtr[] active = display.GetWindows(display.Root, "_NET_ACTIVE_WINDOW");
-        return active.Length > 0 && active[0] == window;
+        if (_window == IntPtr.Zero) return false;
+        IntPtr[] active = _display.GetWindows(_display.Root, "_NET_ACTIVE_WINDOW");
+        return active.Length > 0 && active[0] == _window;
     }
 
     /// <summary>What has the keyboard instead, for the diagnostic log.</summary>
     public string ForegroundDescription()
     {
-        IntPtr[] active = display.GetWindows(display.Root, "_NET_ACTIVE_WINDOW");
+        IntPtr[] active = _display.GetWindows(_display.Root, "_NET_ACTIVE_WINDOW");
         if (active.Length == 0 || active[0] == IntPtr.Zero) return "nothing";
-        if (active[0] == window) return "the game";
-        string cls = display.GetText(active[0], "WM_CLASS") ?? "unknown";
+        if (active[0] == _window) return "the game";
+        string cls = _display.GetText(active[0], "WM_CLASS") ?? "unknown";
         return cls + " (not the game)";
     }
 }

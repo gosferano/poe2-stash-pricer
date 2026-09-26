@@ -39,15 +39,15 @@ internal sealed class UinputDevice : IDisposable
     /// </summary>
     private const int AbsMax = 65535;
 
-    private readonly object sync = new object();
-    private readonly Func<System.Drawing.Size> screenSize;
-    private int fd = -1;
+    private readonly object _sync = new object();
+    private readonly Func<System.Drawing.Size> _screenSize;
+    private int _fd = -1;
 
     public UinputDevice(Func<System.Drawing.Size> screenSize)
     {
-        this.screenSize = screenSize;
-        fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
-        if (fd < 0)
+        _screenSize = screenSize;
+        _fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+        if (_fd < 0)
             throw new InvalidOperationException(
                 "cannot open /dev/uinput (" + Errno() + "). The app moves the mouse through a virtual device; "
                 + "see the README for the one-time udev rule that grants access.");
@@ -63,7 +63,7 @@ internal sealed class UinputDevice : IDisposable
             AbsSetup(ABS_X);
             AbsSetup(ABS_Y);
             DevSetup("poe2-stash-pricer");
-            if (ioctl_int(fd, UI_DEV_CREATE, 0) < 0)
+            if (ioctl_int(_fd, UI_DEV_CREATE, 0) < 0)
                 throw new InvalidOperationException("the virtual input device could not be created (" + Errno() + ")");
             // The compositor has to notice the new device before it will route anything from it.
             Thread.Sleep(400);
@@ -79,7 +79,7 @@ internal sealed class UinputDevice : IDisposable
 
     private void Ioctl(ulong request, int arg)
     {
-        if (ioctl_int(fd, request, arg) < 0)
+        if (ioctl_int(_fd, request, arg) < 0)
             throw new InvalidOperationException("uinput setup failed (" + Errno() + ")");
     }
 
@@ -91,7 +91,7 @@ internal sealed class UinputDevice : IDisposable
         BitConverter.GetBytes(0).CopyTo(b, 4);
         BitConverter.GetBytes(0).CopyTo(b, 8);
         BitConverter.GetBytes(AbsMax).CopyTo(b, 12);
-        if (ioctl_ptr(fd, UI_ABS_SETUP, b) < 0)
+        if (ioctl_ptr(_fd, UI_ABS_SETUP, b) < 0)
             throw new InvalidOperationException("uinput axis setup failed (" + Errno() + ")");
     }
 
@@ -105,7 +105,7 @@ internal sealed class UinputDevice : IDisposable
         BitConverter.GetBytes((ushort)0x0001).CopyTo(b, 6);
         byte[] n = System.Text.Encoding.ASCII.GetBytes(name);
         Array.Copy(n, 0, b, 8, Math.Min(n.Length, 79));
-        if (ioctl_ptr(fd, UI_DEV_SETUP, b) < 0)
+        if (ioctl_ptr(_fd, UI_DEV_SETUP, b) < 0)
             throw new InvalidOperationException("uinput device setup failed (" + Errno() + ")");
     }
 
@@ -116,7 +116,7 @@ internal sealed class UinputDevice : IDisposable
         BitConverter.GetBytes(type).CopyTo(ev, 16);
         BitConverter.GetBytes(code).CopyTo(ev, 18);
         BitConverter.GetBytes(value).CopyTo(ev, 20);
-        if (write(fd, ev, 24) != 24)
+        if (write(_fd, ev, 24) != 24)
             throw new InvalidOperationException("writing to the virtual device failed (" + Errno() + ")");
     }
 
@@ -124,9 +124,9 @@ internal sealed class UinputDevice : IDisposable
 
     public void MoveMouse(int x, int y)
     {
-        lock (sync)
+        lock (_sync)
         {
-            System.Drawing.Size screen = screenSize();
+            System.Drawing.Size screen = _screenSize();
             Emit(EV_ABS, ABS_X, Scale(x, screen.Width));
             Emit(EV_ABS, ABS_Y, Scale(y, screen.Height));
             Sync();
@@ -140,7 +140,7 @@ internal sealed class UinputDevice : IDisposable
 
     public void SendCopy()
     {
-        lock (sync)
+        lock (_sync)
         {
             Emit(EV_KEY, KEY_LEFTCTRL, 1);
             Sync();
@@ -155,12 +155,12 @@ internal sealed class UinputDevice : IDisposable
 
     public void Dispose()
     {
-        lock (sync)
+        lock (_sync)
         {
-            if (fd < 0) return;
-            ioctl_int(fd, UI_DEV_DESTROY, 0);
-            close(fd);
-            fd = -1;
+            if (_fd < 0) return;
+            ioctl_int(_fd, UI_DEV_DESTROY, 0);
+            close(_fd);
+            _fd = -1;
         }
     }
 }

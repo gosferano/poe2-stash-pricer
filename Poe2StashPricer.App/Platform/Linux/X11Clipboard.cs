@@ -17,40 +17,40 @@ namespace Poe2StashPricer.App.Platform.Linux;
 ///
 /// Putting the user's clipboard back means owning the selection ourselves and answering requests for it,
 /// which needs an event loop; that loop blocks, so it gets a connection of its own. Reading happens on the
-/// shared connection instead, so a scan never waits on the loop.
+/// _shared connection instead, so a scan never waits on the loop.
 /// </summary>
 internal sealed class X11Clipboard : IClipboard, IDisposable
 {
-    private readonly X11Display shared;          // reading; used by the scan thread
-    private X11Display? owned;                   // the event loop's own connection
-    private readonly Thread loop;
-    private readonly ManualResetEventSlim ready = new ManualResetEventSlim(false);
-    private volatile bool stop;
+    private readonly X11Display _shared;          // reading; used by the scan thread
+    private X11Display? _owned;                   // the event loop's own connection
+    private readonly Thread _loop;
+    private readonly ManualResetEventSlim _ready = new ManualResetEventSlim(false);
+    private volatile bool _stop;
 
-    private IntPtr readWindow;                   // on the shared connection
-    private IntPtr ownerWindow;                  // on the owned connection
-    private readonly XAtoms atoms;
-    private int selectionOwnerEvent = -1;   // the XFixes event number for a change of selection owner
-    private long changes;
+    private IntPtr _readWindow;                   // on the _shared connection
+    private IntPtr _ownerWindow;                  // on the _owned connection
+    private readonly XAtoms _atoms;
+    private int _selectionOwnerEvent = -1;   // the XFixes event number for a change of selection owner
+    private long _changes;
 
     // What we are serving, when we own the selection.
-    private readonly object offerSync = new object();
-    private string? offered;
-    private bool offeredSensitive;
-    private string? pending;
-    private bool pendingSensitive;
+    private readonly object _offerSync = new object();
+    private string? _offered;
+    private bool _offeredSensitive;
+    private string? _pending;
+    private bool _pendingSensitive;
 
     public X11Clipboard(X11Display shared)
     {
-        this.shared = shared;
-        atoms = new XAtoms(shared);
+        _shared = shared;
+        _atoms = new XAtoms(_shared);
 
-        lock (shared.Sync)
-            readWindow = X11.XCreateSimpleWindow(shared.Handle, shared.Root, 0, 0, 1, 1, 0, 0, 0);
+        lock (_shared.Sync)
+            _readWindow = X11.XCreateSimpleWindow(_shared.Handle, _shared.Root, 0, 0, 1, 1, 0, 0, 0);
 
-        loop = new Thread(Loop) { IsBackground = true, Name = "clipboard" };
-        loop.Start();
-        if (!ready.Wait(5000)) Log.Write("the clipboard watcher did not start in time");
+        _loop = new Thread(Loop) { IsBackground = true, Name = "clipboard" };
+        _loop.Start();
+        if (!_ready.Wait(5000)) Log.Write("the clipboard watcher did not start in time");
     }
 
     /// <summary>The interned atoms this class works with, named so that an atom never reads as a value.</summary>
@@ -74,9 +74,9 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
     }
 
     /// <summary>Goes up on every clipboard change, whoever made it.</summary>
-    public ulong ChangeCount => (ulong)Interlocked.Read(ref changes);
+    public ulong ChangeCount => (ulong)Interlocked.Read(ref _changes);
 
-    // ---- reading, on the shared connection ----
+    // ---- reading, on the _shared connection ----
 
     public string? GetText()
     {
@@ -85,16 +85,16 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
 
     public string? GetText(int timeoutMs)
     {
-        lock (shared.Sync)
+        lock (_shared.Sync)
         {
-            if (readWindow == IntPtr.Zero) return null;
-            X11.XDeleteProperty(shared.Handle, readWindow, atoms.ReadProperty);
-            X11.XConvertSelection(shared.Handle, atoms.Clipboard, atoms.Utf8String, atoms.ReadProperty, readWindow, 0 /* CurrentTime */);
-            X11.XFlush(shared.Handle);
+            if (_readWindow == IntPtr.Zero) return null;
+            X11.XDeleteProperty(_shared.Handle, _readWindow, _atoms.ReadProperty);
+            X11.XConvertSelection(_shared.Handle, _atoms.Clipboard, _atoms.Utf8String, _atoms.ReadProperty, _readWindow, 0 /* CurrentTime */);
+            X11.XFlush(_shared.Handle);
 
             if (!WaitForSelectionNotify(timeoutMs)) return null;
 
-            if (X11.XGetWindowProperty(shared.Handle, readWindow, atoms.ReadProperty, 0, 4 * 1024 * 1024, true,
+            if (X11.XGetWindowProperty(_shared.Handle, _readWindow, _atoms.ReadProperty, 0, 4 * 1024 * 1024, true,
                                        0 /* AnyPropertyType */, out ulong actualType, out int fmt,
                                        out ulong n, out _, out IntPtr prop) != 0 || prop == IntPtr.Zero)
                 return null;
@@ -102,7 +102,7 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
             {
                 // An item's text is a few hundred bytes, far short of the server's limit, so the chunked
                 // INCR protocol never comes up. If it ever did, treating it as "nothing" is the safe answer.
-                if (actualType == atoms.Incr) { Log.Write("clipboard offered an INCR transfer, which is not handled"); return null; }
+                if (actualType == _atoms.Incr) { Log.Write("clipboard offered an INCR transfer, which is not handled"); return null; }
                 if (fmt != 8 || n == 0) return null;
                 byte[] raw = new byte[n];
                 Marshal.Copy(prop, raw, 0, (int)n);
@@ -112,16 +112,16 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         }
     }
 
-    /// <summary>Caller holds the shared lock.</summary>
+    /// <summary>Caller holds the _shared lock.</summary>
     private bool WaitForSelectionNotify(int timeoutMs)
     {
         byte[] ev = new byte[256];
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
-            while (X11.XPending(shared.Handle) > 0)
+            while (X11.XPending(_shared.Handle) > 0)
             {
-                X11.XNextEvent(shared.Handle, ev);
+                X11.XNextEvent(_shared.Handle, ev);
                 if (BitConverter.ToInt32(ev, 0) == X11.SelectionNotify)
                     return BitConverter.ToInt64(ev, 56) != 0;   // property None means the owner refused
             }
@@ -135,10 +135,10 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
     public void SetText(string text, bool sensitive)
     {
         if (text == null) return;
-        lock (offerSync)
+        lock (_offerSync)
         {
-            pending = text;
-            pendingSensitive = sensitive;
+            _pending = text;
+            _pendingSensitive = sensitive;
         }
         Wake();
     }
@@ -149,17 +149,17 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
     /// </summary>
     private void Wake()
     {
-        IntPtr target = ownerWindow;
+        IntPtr target = _ownerWindow;
         if (target == IntPtr.Zero) return;
         byte[] ev = new byte[96];
         BitConverter.GetBytes(33).CopyTo(ev, 0);              // ClientMessage
         BitConverter.GetBytes((long)target).CopyTo(ev, 32);
-        BitConverter.GetBytes((long)atoms.Wake).CopyTo(ev, 40);
+        BitConverter.GetBytes((long)_atoms.Wake).CopyTo(ev, 40);
         BitConverter.GetBytes(32).CopyTo(ev, 48);
-        lock (shared.Sync)
+        lock (_shared.Sync)
         {
-            X11.XSendEvent(shared.Handle, target, false, 0, ev);
-            X11.XFlush(shared.Handle);
+            X11.XSendEvent(_shared.Handle, target, false, 0, ev);
+            X11.XFlush(_shared.Handle);
         }
     }
 
@@ -167,40 +167,40 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
     {
         try
         {
-            owned = X11Display.Open();
-            lock (owned.Sync)
+            _owned = X11Display.Open();
+            lock (_owned.Sync)
             {
-                ownerWindow = X11.XCreateSimpleWindow(owned.Handle, owned.Root, 0, 0, 1, 1, 0, 0, 0);
-                X11.XSelectInput(owned.Handle, ownerWindow, X11.PropertyChangeMask);
-                if (!X11.XFixesQueryExtension(owned.Handle, out int xfixesEvent, out _))
+                _ownerWindow = X11.XCreateSimpleWindow(_owned.Handle, _owned.Root, 0, 0, 1, 1, 0, 0, 0);
+                X11.XSelectInput(_owned.Handle, _ownerWindow, X11.PropertyChangeMask);
+                if (!X11.XFixesQueryExtension(_owned.Handle, out int xfixesEvent, out _))
                 {
                     Log.Write("XFixes is missing: clipboard changes cannot be watched");
-                    ready.Set();
+                    _ready.Set();
                     return;
                 }
-                X11.XFixesSelectSelectionInput(owned.Handle, ownerWindow, atoms.Clipboard, X11.XFixesSetSelectionOwnerNotifyMask);
-                X11.XSync(owned.Handle, false);
-                selectionOwnerEvent = xfixesEvent;
+                X11.XFixesSelectSelectionInput(_owned.Handle, _ownerWindow, _atoms.Clipboard, X11.XFixesSetSelectionOwnerNotifyMask);
+                X11.XSync(_owned.Handle, false);
+                _selectionOwnerEvent = xfixesEvent;
             }
-            ready.Set();
+            _ready.Set();
 
             byte[] ev = new byte[256];
-            while (!stop)
+            while (!_stop)
             {
-                // XNextEvent blocks, which is why this connection is not shared with anyone.
-                X11.XNextEvent(owned.Handle, ev);
+                // XNextEvent blocks, which is why this connection is not _shared with anyone.
+                X11.XNextEvent(_owned.Handle, ev);
                 int type = BitConverter.ToInt32(ev, 0);
-                if (type == selectionOwnerEvent) Interlocked.Increment(ref changes);
+                if (type == _selectionOwnerEvent) Interlocked.Increment(ref _changes);
                 else if (type == X11.SelectionRequest) Answer(ev);
-                else if (type == X11.SelectionClear) lock (offerSync) offered = null;
+                else if (type == X11.SelectionClear) lock (_offerSync) _offered = null;
                 TakeOwnershipIfAsked();
             }
         }
         catch (Exception ex) { Log.Write("the clipboard watcher stopped: " + ex.Message); }
         finally
         {
-            ready.Set();
-            owned?.Dispose();
+            _ready.Set();
+            _owned?.Dispose();
         }
     }
 
@@ -208,20 +208,20 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
     {
         string? want;
         bool sensitive;
-        lock (offerSync)
+        lock (_offerSync)
         {
-            if (pending == null) return;
-            want = pending;
-            sensitive = pendingSensitive;
-            pending = null;
-            offered = want;
-            offeredSensitive = sensitive;
+            if (_pending == null) return;
+            want = _pending;
+            sensitive = _pendingSensitive;
+            _pending = null;
+            _offered = want;
+            _offeredSensitive = sensitive;
         }
-        if (owned == null) return;
-        lock (owned.Sync)
+        if (_owned == null) return;
+        lock (_owned.Sync)
         {
-            X11.XSetSelectionOwner(owned.Handle, atoms.Clipboard, ownerWindow, 0 /* CurrentTime */);
-            X11.XFlush(owned.Handle);
+            X11.XSetSelectionOwner(_owned.Handle, _atoms.Clipboard, _ownerWindow, 0 /* CurrentTime */);
+            X11.XFlush(_owned.Handle);
         }
     }
 
@@ -237,37 +237,37 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
 
         string? give;
         bool sensitive;
-        lock (offerSync)
+        lock (_offerSync)
         {
-            give = offered;
-            sensitive = offeredSensitive;
+            give = _offered;
+            sensitive = _offeredSensitive;
         }
 
         bool ok = false;
-        if (give != null && owned != null)
+        if (give != null && _owned != null)
         {
-            lock (owned.Sync)
+            lock (_owned.Sync)
             {
-                if (target == atoms.Targets)
+                if (target == _atoms.Targets)
                 {
                     ulong[] list = sensitive
-                        ? new[] { atoms.Targets, atoms.Utf8String, atoms.PlainUtf8, X11.XA_STRING, atoms.Text, atoms.PasswordHint }
-                        : new[] { atoms.Targets, atoms.Utf8String, atoms.PlainUtf8, X11.XA_STRING, atoms.Text };
+                        ? new[] { _atoms.Targets, _atoms.Utf8String, _atoms.PlainUtf8, X11.XA_STRING, _atoms.Text, _atoms.PasswordHint }
+                        : new[] { _atoms.Targets, _atoms.Utf8String, _atoms.PlainUtf8, X11.XA_STRING, _atoms.Text };
                     byte[] data = new byte[list.Length * 8];
                     for (int i = 0; i < list.Length; i++) BitConverter.GetBytes((long)list[i]).CopyTo(data, i * 8);
-                    X11.XChangeProperty(owned.Handle, requestor, property, X11.XA_ATOM, 32, X11.PropModeReplace, data, list.Length);
+                    X11.XChangeProperty(_owned.Handle, requestor, property, X11.XA_ATOM, 32, X11.PropModeReplace, data, list.Length);
                     ok = true;
                 }
-                else if (sensitive && target == atoms.PasswordHint)
+                else if (sensitive && target == _atoms.PasswordHint)
                 {
                     byte[] data = Encoding.UTF8.GetBytes("secret");
-                    X11.XChangeProperty(owned.Handle, requestor, property, target, 8, X11.PropModeReplace, data, data.Length);
+                    X11.XChangeProperty(_owned.Handle, requestor, property, target, 8, X11.PropModeReplace, data, data.Length);
                     ok = true;
                 }
-                else if (target == atoms.Utf8String || target == atoms.PlainUtf8 || target == X11.XA_STRING || target == atoms.Text)
+                else if (target == _atoms.Utf8String || target == _atoms.PlainUtf8 || target == X11.XA_STRING || target == _atoms.Text)
                 {
                     byte[] data = Encoding.UTF8.GetBytes(give);
-                    X11.XChangeProperty(owned.Handle, requestor, property, target, 8, X11.PropModeReplace, data, data.Length);
+                    X11.XChangeProperty(_owned.Handle, requestor, property, target, 8, X11.PropModeReplace, data, data.Length);
                     ok = true;
                 }
             }
@@ -277,31 +277,31 @@ internal sealed class X11Clipboard : IClipboard, IDisposable
         byte[] ev = new byte[96];
         BitConverter.GetBytes(X11.SelectionNotify).CopyTo(ev, 0);
         BitConverter.GetBytes((long)requestor).CopyTo(ev, 32);
-        BitConverter.GetBytes((long)atoms.Clipboard).CopyTo(ev, 40);
+        BitConverter.GetBytes((long)_atoms.Clipboard).CopyTo(ev, 40);
         BitConverter.GetBytes((long)target).CopyTo(ev, 48);
         BitConverter.GetBytes((long)(ok ? property : 0)).CopyTo(ev, 56);
         BitConverter.GetBytes((long)time).CopyTo(ev, 64);
-        if (owned != null)
-            lock (owned.Sync)
+        if (_owned != null)
+            lock (_owned.Sync)
             {
-                X11.XSendEvent(owned.Handle, requestor, false, 0, ev);
-                X11.XFlush(owned.Handle);
+                X11.XSendEvent(_owned.Handle, requestor, false, 0, ev);
+                X11.XFlush(_owned.Handle);
             }
     }
 
     public void Dispose()
     {
-        stop = true;
+        _stop = true;
         Wake();
-        loop.Join(1000);
-        lock (shared.Sync)
+        _loop.Join(1000);
+        lock (_shared.Sync)
         {
-            if (readWindow != IntPtr.Zero)
+            if (_readWindow != IntPtr.Zero)
             {
-                X11.XDestroyWindow(shared.Handle, readWindow);
-                readWindow = IntPtr.Zero;
+                X11.XDestroyWindow(_shared.Handle, _readWindow);
+                _readWindow = IntPtr.Zero;
             }
         }
-        ready.Dispose();
+        _ready.Dispose();
     }
 }

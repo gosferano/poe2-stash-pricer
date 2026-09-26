@@ -137,17 +137,17 @@ internal sealed class X11Display : IDisposable
 /// </summary>
 internal static class X11Errors
 {
-    private static readonly object sync = new object();
-    private static readonly X11.ErrorHandler handler = OnError;
-    private static readonly System.Collections.Generic.HashSet<IntPtr> ours = new System.Collections.Generic.HashSet<IntPtr>();
-    private static X11.ErrorHandler? previous;
-    private static bool installed;
+    private static readonly object _sync = new object();
+    private static readonly X11.ErrorHandler _handler = OnError;
+    private static readonly System.Collections.Generic.HashSet<IntPtr> _ours = new System.Collections.Generic.HashSet<IntPtr>();
+    private static X11.ErrorHandler? _previous;
+    private static bool _installed;
 
-    public static void Own(IntPtr display) { lock (sync) ours.Add(display); }
+    public static void Own(IntPtr display) { lock (_sync) _ours.Add(display); }
 
-    public static void Disown(IntPtr display) { lock (sync) ours.Remove(display); }
+    public static void Disown(IntPtr display) { lock (_sync) _ours.Remove(display); }
 
-    private static bool IsOurs(IntPtr display) { lock (sync) return ours.Contains(display); }
+    private static bool IsOurs(IntPtr display) { lock (_sync) return _ours.Contains(display); }
 
     [ThreadStatic] private static string? last;
 
@@ -158,13 +158,13 @@ internal static class X11Errors
 
     public static void Install()
     {
-        lock (sync)
+        lock (_sync)
         {
-            if (installed) return;
-            IntPtr old = X11.XSetErrorHandler(handler);
+            if (_installed) return;
+            IntPtr old = X11.XSetErrorHandler(_handler);
             if (old != IntPtr.Zero)
-                previous = Marshal.GetDelegateForFunctionPointer<X11.ErrorHandler>(old);
-            installed = true;
+                _previous = Marshal.GetDelegateForFunctionPointer<X11.ErrorHandler>(old);
+            _installed = true;
         }
     }
 
@@ -173,7 +173,7 @@ internal static class X11Errors
         // Not our connection (Avalonia's, say): leave it to whoever handled it before us.
         if (!IsOurs(display))
         {
-            X11.ErrorHandler? chain = previous;
+            X11.ErrorHandler? chain = _previous;
             return chain != null ? chain(display, ev) : 0;
         }
 

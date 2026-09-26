@@ -23,3 +23,18 @@ dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
 
 # A file's namespace follows its folder.
 dotnet_style_namespace_match_folder = true:warning
+
+# Private fields are _camelCase.
+dotnet_naming_rule.private_fields_with_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_with_underscore.style = underscore_camel_case
+dotnet_naming_rule.private_fields_with_underscore.severity = warning
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel_case.required_prefix = _
+dotnet_naming_style.underscore_camel_case.capitalization = camel_case
+
+# Say the type; the ported code never leans on inference either.
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = false:suggestion

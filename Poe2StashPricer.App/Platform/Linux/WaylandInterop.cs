@@ -37,15 +37,15 @@ internal static class Wl
     public const uint WL_DISPLAY_GET_REGISTRY = 1;
     public const uint WL_REGISTRY_BIND = 0;
 
-    private static IntPtr handle;
+    private static IntPtr _handle;
 
     private static IntPtr Symbol(string name)
     {
-        if (handle == IntPtr.Zero) handle = NativeLibrary.Load(Lib);
-        return NativeLibrary.GetExport(handle, name);
+        if (_handle == IntPtr.Zero) _handle = NativeLibrary.Load(Lib);
+        return NativeLibrary.GetExport(_handle, name);
     }
 
-    private static readonly List<object> listeners = new List<object>();
+    private static readonly List<object> _listeners = new List<object>();
 
     /// <summary>
     /// Builds a listener for wl_proxy_add_listener. The library keeps the pointer it is given and calls
@@ -58,10 +58,10 @@ internal static class Wl
         IntPtr block = Marshal.AllocHGlobal(IntPtr.Size * handlers.Length);
         for (int i = 0; i < handlers.Length; i++)
             Marshal.WriteIntPtr(block, IntPtr.Size * i, Marshal.GetFunctionPointerForDelegate(handlers[i]));
-        lock (listeners)
+        lock (_listeners)
         {
-            foreach (Delegate d in handlers) listeners.Add(d);
-            listeners.Add(block);
+            foreach (Delegate d in handlers) _listeners.Add(d);
+            _listeners.Add(block);
         }
         return block;
     }
@@ -121,7 +121,7 @@ internal struct WlArgument
 /// </summary>
 internal sealed class WlInterface
 {
-    private static readonly List<IntPtr> kept = new List<IntPtr>();
+    private static readonly List<IntPtr> _kept = new List<IntPtr>();
 
     public IntPtr Ptr { get; }
     public IntPtr NamePtr { get; }
@@ -185,7 +185,7 @@ internal sealed class WlInterface
     private static IntPtr Utf8(string s)
     {
         IntPtr p = Marshal.StringToHGlobalAnsi(s);
-        lock (kept) kept.Add(p);
+        lock (_kept) _kept.Add(p);
         return p;
     }
 
@@ -193,7 +193,7 @@ internal sealed class WlInterface
     {
         IntPtr p = Marshal.AllocHGlobal(bytes);
         for (int i = 0; i < bytes; i++) Marshal.WriteByte(p, i, 0);
-        lock (kept) kept.Add(p);
+        lock (_kept) _kept.Add(p);
         return p;
     }
 }
