@@ -41,7 +41,7 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `src/StashLocator.cs` | `Poe2StashPricer.Core/Detection/StashLocator.cs` | done | Namespace rename only. |
 | `src/DigitReader.cs` | `Poe2StashPricer.Core/Detection/DigitReader.cs` | done | |
 | `src/TabWatcher.cs` | `Poe2StashPricer.Core/Detection/TabWatcher.cs` | done | Takes an `IScreenCapture` instead of calling `Grid.Capture`. |
-| `src/Scanner.cs` | `Poe2StashPricer.Core/Detection/Grid.cs`, `Scanning/{Scanner,ScanConfig,ScanPlan,ProbeGroup,ScanItem,ScanResult}.cs` | later | Split by type; `Grid.Capture` moves behind `IScreenCapture`. |
+| `src/Scanner.cs` | `Poe2StashPricer.Core/Detection/Grid.cs`, `Scanning/{Scanner,ScanConfig,ScanPlan,ProbeGroup,ScanItem,ScanResult}.cs` | done | Split by type; `Grid.Capture` moves behind `IScreenCapture`. |
 | `src/TabLibrary.cs` | `Poe2StashPricer.Core/Tabs/TabProfile.cs`, `Tabs/TabLibrary.cs` | done | Split: `TabProfile` gets its own file. |
 | `src/TabResults.cs` | `Poe2StashPricer.Core/Tabs/ResultStore.cs` | done | Renamed after its main type; also holds `SavedItem`, `TabResult`, `PricedItem`. |
 | `src/ItemParser.cs` | `Poe2StashPricer.Core/Pricing/ItemParser.cs` | done | Namespace rename only. |
@@ -73,6 +73,8 @@ Recorded here so they are not mistaken for porting bugs when comparing with upst
 - `TabLibrary` no longer touches the per-tab PNG screenshots that upstream versions before 1.2 left behind:
   neither the item-mask migration in `LoadLearned` nor the deletions in `Save`, `Delete` and `DeleteAll`.
 - `AppSettings.ScanKey`/`OverlayKey` were WinForms `Keys` integers; they are now a neutral `Hotkey` record.
+- `ScanConfig.HotkeyVk` is gone: which key started the scan is the `IKeyState` implementation's business
+  (`ScanTriggerHeld`), not the scanner's.
 - poe.ninja rate limiting is detected from `HttpResponseMessage.StatusCode` (429/503) and
   `Headers.RetryAfter` instead of `WebException`.
 - The poe.ninja user agent reports this port's name and version, not upstream's.
