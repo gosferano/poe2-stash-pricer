@@ -33,7 +33,7 @@ public class AppSettings
         {
             if (File.Exists(FilePath))
             {
-                AppSettings s = Json.Deserialize<AppSettings>(File.ReadAllText(FilePath));
+                AppSettings s = Json.Load<AppSettings>(FilePath);
                 if (s != null) return s;
             }
         }
@@ -46,7 +46,7 @@ public class AppSettings
         try
         {
             Directory.CreateDirectory(AppPaths.Dir);
-            File.WriteAllText(FilePath, Json.Serialize(this));
+            Json.Save(FilePath, this);
         }
         catch { }
     }

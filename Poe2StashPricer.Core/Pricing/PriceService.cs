@@ -5,7 +5,6 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using Poe2StashPricer.Storage;
 
@@ -41,8 +40,9 @@ public static class PriceService
         return c;
     }
 
+    /// <summary>Asks poe.ninja one question and parses the answer as it arrives.</summary>
     /// <param name="t">The table being filled, so a "slow down" answer can be remembered; may be null.</param>
-    private static string Get(string url, PriceTable t)
+    private static JsonDocument Get(string url, PriceTable t)
     {
         using (HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, url))
         using (HttpResponseMessage resp = http.Send(req, HttpCompletionOption.ResponseHeadersRead))
@@ -53,23 +53,9 @@ public static class PriceService
                 throw new HttpRequestException("poe.ninja answered " + (int)resp.StatusCode + " " + resp.ReasonPhrase);
             }
             using (Stream s = resp.Content.ReadAsStream())
-            using (StreamReader r = new StreamReader(s, Encoding.UTF8))
-            {
-                // The biggest poe.ninja answer is a few MB; refuse anything absurd instead of filling the memory.
-                char[] buf = new char[64 * 1024];
-                StringBuilder sb = new StringBuilder();
-                int n;
-                while ((n = r.Read(buf, 0, buf.Length)) > 0)
-                {
-                    sb.Append(buf, 0, n);
-                    if (sb.Length > MaxResponseChars) throw new InvalidDataException("poe.ninja answer too large");
-                }
-                return sb.ToString();
-            }
+                return JsonDocument.Parse(s);
         }
     }
-
-    private const int MaxResponseChars = 64 * 1024 * 1024;
 
     private static string Q(string s) { return Uri.EscapeDataString(s); }
 
@@ -103,7 +89,7 @@ public static class PriceService
     public static List<string> GetLeagues()
     {
         List<string> res = new List<string>();
-        using (JsonDocument doc = JsonDocument.Parse(Get(Base + "leagues", null)))
+        using (JsonDocument doc = Get(Base + "leagues", null))
         {
             if (doc.RootElement.ValueKind != JsonValueKind.Array) return res;
             foreach (JsonElement d in doc.RootElement.EnumerateArray())
@@ -129,7 +115,7 @@ public static class PriceService
             if (progress != null) progress("Loading prices (" + step + "/" + total + "): " + type);
             try
             {
-                using (JsonDocument doc = JsonDocument.Parse(Get(Base + "exchange/current/overview?league=" + Q(league) + "&type=" + type, t)))
+                using (JsonDocument doc = Get(Base + "exchange/current/overview?league=" + Q(league) + "&type=" + type, t))
                 {
                     JsonElement root = doc.RootElement;
                     ReadRates(t, root);
@@ -158,7 +144,7 @@ public static class PriceService
             if (progress != null) progress("Loading prices (" + step + "/" + total + "): " + type);
             try
             {
-                using (JsonDocument doc = JsonDocument.Parse(Get(Base + "stash/current/item/overview?league=" + Q(league) + "&type=" + type, t)))
+                using (JsonDocument doc = Get(Base + "stash/current/item/overview?league=" + Q(league) + "&type=" + type, t))
                 {
                     JsonElement root = doc.RootElement;
                     ReadRates(t, root);

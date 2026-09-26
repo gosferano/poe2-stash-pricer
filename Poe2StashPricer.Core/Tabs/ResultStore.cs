@@ -52,7 +52,7 @@ public static class ResultStore
         {
             if (File.Exists(FilePath))
             {
-                Dictionary<string, TabResult> d = Json.Deserialize<Dictionary<string, TabResult>>(File.ReadAllText(FilePath));
+                Dictionary<string, TabResult> d = Json.Load<Dictionary<string, TabResult>>(FilePath);
                 if (d != null) return d;
             }
         }
@@ -70,7 +70,7 @@ public static class ResultStore
         try
         {
             Directory.CreateDirectory(AppPaths.Dir);
-            File.WriteAllText(FilePath, Json.Serialize(results));
+            Json.Save(FilePath, results);
         }
         catch { }
     }

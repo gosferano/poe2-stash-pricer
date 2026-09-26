@@ -26,7 +26,10 @@ Upstream's git history is not imported; files were copied in from a clone of the
   on Linux). `Bitmap`, `Graphics` and `LockBits` are replaced: `PixelBuffer` is the only image boundary and is
   built either from raw BGRA bytes or from a SixLabors.ImageSharp image.
 - **JSON.** `System.Web.Script.Serialization.JavaScriptSerializer` is replaced with `System.Text.Json`
-  (`PropertyNameCaseInsensitive = true`); `[ScriptIgnore]` becomes `[JsonIgnore]`.
+  (`PropertyNameCaseInsensitive = true`); `[ScriptIgnore]` becomes `[JsonIgnore]`. Everything is read and
+  written as a stream, never through an intermediate string: the settings, tab profiles, scan results and
+  learned digits through `Storage/Json.cs`, the embedded layouts straight off the resource stream, and a
+  poe.ninja answer straight off the response.
 - **Data folder.** `%APPDATA%\PoeStashPricer` becomes `~/.config/poe2-stash-pricer` (`AppPaths.Dir`, which follows
   `XDG_CONFIG_HOME`).
 - **Version.** This port has its own version numbers, starting at 0.1.0; it does not follow upstream's.
@@ -79,4 +82,6 @@ Recorded here so they are not mistaken for porting bugs when comparing with upst
   (`ScanTriggerHeld`), not the scanner's.
 - poe.ninja rate limiting is detected from `HttpResponseMessage.StatusCode` (429/503) and
   `Headers.RetryAfter` instead of `WebException`.
+- Upstream refused a poe.ninja answer over 64 MB while reading it into a string. There is no such cap here: the
+  answer is parsed straight off the response stream, and `HttpClient.Timeout` bounds how long that can take.
 - The poe.ninja user agent reports this port's name and version, not upstream's.

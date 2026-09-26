@@ -68,7 +68,7 @@ public static class TabLibrary
             string key = Path.GetFileNameWithoutExtension(f);
             try
             {
-                TabProfile p = Json.Deserialize<TabProfile>(File.ReadAllText(f));
+                TabProfile p = Json.Load<TabProfile>(f);
                 p.Key = key;
                 if (string.IsNullOrEmpty(p.Name)) p.Name = NameOf(key);
                 names[key] = p.Name;
@@ -86,7 +86,7 @@ public static class TabLibrary
     public static void Save(TabProfile p)
     {
         Directory.CreateDirectory(Dir);
-        File.WriteAllText(Path.Combine(Dir, p.Key + ".json"), Json.Serialize(p));
+        Json.Save(Path.Combine(Dir, p.Key + ".json"), p);
         names[p.Key] = p.Name;
     }
 
@@ -356,8 +356,7 @@ public static class TabLibrary
             using (Stream s = typeof(TabLibrary).Assembly.GetManifestResourceStream("Poe2StashPricer.Layouts.json"))
             {
                 if (s == null) return res;
-                using (StreamReader r = new StreamReader(s))
-                    res = Json.Deserialize<List<TabProfile>>(r.ReadToEnd());
+                res = Json.Read<List<TabProfile>>(s);
             }
             foreach (TabProfile p in res)
             {

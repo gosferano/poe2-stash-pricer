@@ -39,7 +39,7 @@ public static class DigitReader
             {
                 try
                 {
-                    if (File.Exists(FilePath)) store = Json.Deserialize<Store>(File.ReadAllText(FilePath));
+                    if (File.Exists(FilePath)) store = Json.Load<Store>(FilePath);
                 }
                 catch { }
                 if (store == null || store.Glyphs == null) store = new Store();
@@ -62,7 +62,7 @@ public static class DigitReader
         try
         {
             Directory.CreateDirectory(AppPaths.Dir);
-            File.WriteAllText(FilePath, Json.Serialize(Data));
+            Json.Save(FilePath, Data);
             dirty = false;
         }
         catch { }
