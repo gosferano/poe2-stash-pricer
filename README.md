@@ -18,12 +18,40 @@ Early work in progress; not usable yet. See [UPSTREAM.md](UPSTREAM.md) for what 
 
 - .NET 10 SDK
 - A Wayland desktop with XWayland (the game runs as an XWayland client under Proton)
+- Access to `/dev/uinput`, to move the mouse during a scan
+
+Steam already sets that access up: `/usr/lib/udev/rules.d/60-steam-input.rules` hands `/dev/uinput` to the
+logged-in user, so if you launch Path of Exile 2 through Steam there is nothing to do. Otherwise install the
+rule that ships here:
+
+```bash
+sudo cp packaging/99-poe2-stash-pricer-uinput.rules /etc/udev/rules.d/
+```
+
+```bash
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
 
 ## Building
 
-```
+```bash
 dotnet build
 ```
+
+## Trying it
+
+There is no user interface yet. The platform layer can be driven from the command line: open a stash tab,
+leave the game in front, and run
+
+```bash
+dotnet run --project Poe2StashPricer.App -- --debug-scan --prices
+```
+
+It finds the game window, reads the stash, hovers every slot, and prints each item with what poe.ninja says
+it is worth. Leave off `--prices` to skip the download and just list what was read.
+
+**It will take over your clipboard.** The scan copies items the way you would, and the clipboard cannot yet be
+put back the way it was — see [UPSTREAM.md](UPSTREAM.md#the-clipboard-does-not-cross-to-wayland).
 
 ## Licence
 
