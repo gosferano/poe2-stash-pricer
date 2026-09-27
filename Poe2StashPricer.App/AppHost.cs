@@ -22,6 +22,8 @@ internal static class AppHost
     private static OverlayWindow? _overlay;
     private static ControlSocket? _control;
     private static GlobalShortcutsPortal? _shortcuts;
+    private static readonly System.Collections.Generic.List<System.Runtime.InteropServices.PosixSignalRegistration> _signals
+        = new System.Collections.Generic.List<System.Runtime.InteropServices.PosixSignalRegistration>();
 
     private static async System.Threading.Tasks.Task RegisterShortcutsAsync(AppSettings settings)
     {
@@ -120,6 +122,21 @@ internal static class AppHost
             else if (id == "overlay") _session?.ToggleOverlay();
         });
         _ = RegisterShortcutsAsync(settings);
+
+        // Ctrl+C, a logout or a "systemctl stop" should end the app the ordinary way rather than kill it
+        // where it stands: the keys have to go back to the desktop and the virtual input device be closed.
+        foreach (System.Runtime.InteropServices.PosixSignal signal in new[]
+                 {
+                     System.Runtime.InteropServices.PosixSignal.SIGINT,
+                     System.Runtime.InteropServices.PosixSignal.SIGTERM,
+                     System.Runtime.InteropServices.PosixSignal.SIGHUP,
+                 })
+            _signals.Add(System.Runtime.InteropServices.PosixSignalRegistration.Create(signal, context =>
+            {
+                Log.Write(context.Signal + " received: shutting down");
+                context.Cancel = true;
+                Dispatcher.UIThread.Post(() => desktop.Shutdown());
+            }));
 
         desktop.Exit += (s, e) =>
         {
