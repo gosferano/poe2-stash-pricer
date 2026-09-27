@@ -32,8 +32,18 @@ internal static class Wl
     /// <summary>Core interfaces are exported by the library itself, so only protocol ones must be built.</summary>
     public static IntPtr RegistryInterface => Symbol("wl_registry_interface");
     public static IntPtr SeatInterface => Symbol("wl_seat_interface");
+    public static IntPtr CallbackInterface => Symbol("wl_callback_interface");
+
+    /// <summary>
+    /// wl_display.sync: the server answers straight away, and that answer is what wakes a thread
+    /// parked in wl_display_dispatch. Nobody listens to the reply; asking is the whole point.
+    /// </summary>
+    public static IntPtr Sync(IntPtr display)
+        => wl_proxy_marshal_array_flags(display, WL_DISPLAY_SYNC, CallbackInterface,
+                                       wl_proxy_get_version(display), 0, new[] { WlArgument.NewId() });
 
     private const int WL_MARSHAL_FLAG_DESTROY = 1;
+    public const uint WL_DISPLAY_SYNC = 0;
     public const uint WL_DISPLAY_GET_REGISTRY = 1;
     public const uint WL_REGISTRY_BIND = 0;
 

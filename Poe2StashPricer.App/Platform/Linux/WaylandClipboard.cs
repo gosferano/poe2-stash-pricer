@@ -299,6 +299,9 @@ internal sealed class WaylandClipboard : IClipboard, IDisposable
             if (_device != IntPtr.Zero) Wl.Destructor(_device, DataControl.DeviceDestroy);
             _source = _device = IntPtr.Zero;
         }
+        // The watcher is blocked in dispatch and setting _stop alone will not stir it, so it is given
+        // something to dispatch. The callback is left to the disconnect below, which frees every proxy.
+        Wl.Sync(_connection.Display);
         Wl.wl_display_flush(_connection.Display);
         _loop.Join(500);
         _connection.Dispose();
