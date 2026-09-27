@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.X11;
 
@@ -10,6 +11,17 @@ internal static class Program
     public static int Main(string[] args)
     {
         // Before there is a UI, the platform layer is driven from the command line.
+        // One copy at a time. Two would both take the hotkeys, both drive the mouse and both borrow the
+        // clipboard, which is a good way to make a scan fight itself. A second start brings the first one
+        // forward instead.
+        if (Array.IndexOf(args, "--overlay") < 0 && Array.IndexOf(args, "--scan") < 0
+            && Array.IndexOf(args, "--toggle-overlay") < 0 && !args.Any(a => a.StartsWith("--debug"))
+            && Platform.Linux.ControlSocket.Send("show"))
+        {
+            Console.WriteLine("PoE2 Stash Pricer is already running; its window has been brought to the front.");
+            return 0;
+        }
+
         // Talking to a copy that is already running: what a key binding invokes.
         if (Array.IndexOf(args, "--scan") >= 0 && Array.IndexOf(args, "--debug-session") < 0)
             return Platform.Linux.ControlSocket.Send("scan") ? 0 : Nobody("--scan");

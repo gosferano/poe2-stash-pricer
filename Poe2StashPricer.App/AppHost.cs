@@ -1,5 +1,6 @@
 using System;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Poe2StashPricer.App.Platform.Linux;
@@ -38,6 +39,16 @@ internal static class AppHost
 
     /// <summary>Set from --overlay: the prices over the game, with no window of our own.</summary>
     public static bool OverlayOnly { get; set; }
+
+    /// <summary>Brings the window forward, for when a second copy starts and bows out.</summary>
+    private static void Raise(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        Window? window = desktop.MainWindow;
+        if (window == null) return;
+        window.Show();
+        window.WindowState = WindowState.Normal;
+        window.Activate();
+    }
 
     public static void Attach(IClassicDesktopStyleApplicationLifetime desktop)
     {
@@ -81,6 +92,7 @@ internal static class AppHost
         {
             if (command == "scan") _session?.Scan();
             else if (command == "overlay") _session?.ToggleOverlay();
+            else if (command == "show") Raise(desktop);
         });
         _control.Listen();
 
