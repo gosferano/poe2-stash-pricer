@@ -24,7 +24,7 @@ Upstream's git history is not imported; files were copied in from a clone of the
   only reformatting done: file-scoped namespaces and explicit `private`/`internal` modifiers (see
   `.editorconfig`). Both shift indentation, so comparing a ported file with upstream wants `diff -w`.
 - **Platform calls.** Everything that touched Win32 (`Native.*`), WinForms or `System.Drawing.Bitmap` now goes
-  through interfaces in `Poe2StashPricer.Core/Platform/`, implemented in the app project under `Platform/`.
+  through interfaces in `src/Poe2StashPricer.Core/Platform/`, implemented in the app project under `Platform/`.
 - **Images.** `System.Drawing.Rectangle/Point/Size` are kept (they come from `System.Drawing.Primitives` and work
   on Linux). `Bitmap`, `Graphics` and `LockBits` are replaced: `PixelBuffer` is the only image boundary and is
   built either from raw BGRA bytes or from a SixLabors.ImageSharp image.
@@ -44,31 +44,31 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 
 | Upstream path | Here | Status | Notes |
 |---|---|---|---|
-| `src/Layouts.json` | `Poe2StashPricer.Core/Layouts.json` | done | Copied as-is, embedded as `Poe2StashPricer.Layouts.json`. |
-| `src/SlotDetector.cs` | `Poe2StashPricer.Core/Detection/PixelBuffer.cs`, `Detection/SlotDetector.cs` | done | Split: `PixelBuffer` gets its own file. |
-| `src/StashLocator.cs` | `Poe2StashPricer.Core/Detection/StashLocator.cs` | done | Namespace rename only. |
-| `src/DigitReader.cs` | `Poe2StashPricer.Core/Detection/DigitReader.cs` | done | |
-| `src/TabWatcher.cs` | `Poe2StashPricer.Core/Detection/TabWatcher.cs` | done | Takes an `IScreenCapture` instead of calling `Grid.Capture`. |
-| `src/Scanner.cs` | `Poe2StashPricer.Core/Detection/Grid.cs`, `Scanning/{Scanner,ScanConfig,ScanPlan,ProbeGroup,ScanItem,ScanResult}.cs` | done | Split by type; `Grid.Capture` moves behind `IScreenCapture`. |
-| `src/TabLibrary.cs` | `Poe2StashPricer.Core/Tabs/TabProfile.cs`, `Tabs/TabLibrary.cs` | done | Split: `TabProfile` gets its own file. |
-| `src/TabResults.cs` | `Poe2StashPricer.Core/Tabs/ResultStore.cs` | done | Renamed after its main type; also holds `SavedItem`, `TabResult`, `PricedItem`. |
-| `src/ItemParser.cs` | `Poe2StashPricer.Core/Pricing/ItemParser.cs` | done | Namespace rename only. |
-| `src/PriceService.cs` | `Poe2StashPricer.Core/Pricing/PriceTable.cs`, `Pricing/PriceService.cs` | done | Split: `PriceInfo` and `PriceTable` get their own file. |
-| `src/Settings.cs` | `Poe2StashPricer.Core/Storage/AppSettings.cs`, `Storage/AppPaths.cs` | done | Split: the data folder moves to `AppPaths`. |
-| `src/Log.cs` | `Poe2StashPricer.Core/Storage/Log.cs` | done | |
-| `src/Native.cs` | `Poe2StashPricer.Core/Platform/*.cs` + `Poe2StashPricer.App/Platform/Linux/` | done | Not ported as a file: replaced by interfaces and their Linux implementations. |
-| `src/Hotkeys.cs` | `Poe2StashPricer.Core/Storage/Hotkey.cs` | done | Only the neutral key representation is kept; the WinForms `Keys` helpers and `KeyCaptureForm` are dropped. |
-| `src/MainForm.cs` | `Poe2StashPricer.Core/Session/` + Avalonia main window | part | Its orchestration is ported (`PricerSession` and the pieces around it); the window itself is Phase 4. |
+| `src/Layouts.json` | `src/Poe2StashPricer.Core/Layouts.json` | done | Copied as-is, embedded as `Poe2StashPricer.Layouts.json`. |
+| `src/SlotDetector.cs` | `src/Poe2StashPricer.Core/Detection/PixelBuffer.cs`, `Detection/SlotDetector.cs` | done | Split: `PixelBuffer` gets its own file. |
+| `src/StashLocator.cs` | `src/Poe2StashPricer.Core/Detection/StashLocator.cs` | done | Namespace rename only. |
+| `src/DigitReader.cs` | `src/Poe2StashPricer.Core/Detection/DigitReader.cs` | done | |
+| `src/TabWatcher.cs` | `src/Poe2StashPricer.Core/Detection/TabWatcher.cs` | done | Takes an `IScreenCapture` instead of calling `Grid.Capture`. |
+| `src/Scanner.cs` | `src/Poe2StashPricer.Core/Detection/Grid.cs`, `Scanning/{Scanner,ScanConfig,ScanPlan,ProbeGroup,ScanItem,ScanResult}.cs` | done | Split by type; `Grid.Capture` moves behind `IScreenCapture`. |
+| `src/TabLibrary.cs` | `src/Poe2StashPricer.Core/Tabs/TabProfile.cs`, `Tabs/TabLibrary.cs` | done | Split: `TabProfile` gets its own file. |
+| `src/TabResults.cs` | `src/Poe2StashPricer.Core/Tabs/ResultStore.cs` | done | Renamed after its main type; also holds `SavedItem`, `TabResult`, `PricedItem`. |
+| `src/ItemParser.cs` | `src/Poe2StashPricer.Core/Pricing/ItemParser.cs` | done | Namespace rename only. |
+| `src/PriceService.cs` | `src/Poe2StashPricer.Core/Pricing/PriceTable.cs`, `Pricing/PriceService.cs` | done | Split: `PriceInfo` and `PriceTable` get their own file. |
+| `src/Settings.cs` | `src/Poe2StashPricer.Core/Storage/AppSettings.cs`, `Storage/AppPaths.cs` | done | Split: the data folder moves to `AppPaths`. |
+| `src/Log.cs` | `src/Poe2StashPricer.Core/Storage/Log.cs` | done | |
+| `src/Native.cs` | `src/Poe2StashPricer.Core/Platform/*.cs` + `src/Poe2StashPricer.App/Platform/Linux/` | done | Not ported as a file: replaced by interfaces and their Linux implementations. |
+| `src/Hotkeys.cs` | `src/Poe2StashPricer.Core/Storage/Hotkey.cs` | done | Only the neutral key representation is kept; the WinForms `Keys` helpers and `KeyCaptureForm` are dropped. |
+| `src/MainForm.cs` | `src/Poe2StashPricer.Core/Session/` + Avalonia main window | part | Its orchestration is ported (`PricerSession` and the pieces around it); the window itself is Phase 4. |
 | `src/OverlayForm.cs` | Avalonia or layer-shell overlay | later | Phase 4. |
 | `src/Theme.cs` | Avalonia styles | later | Phase 4. |
-| `src/Program.cs` | `Poe2StashPricer.App/Program.cs` | part | Rewritten for Avalonia; no single-instance guard or updater. |
+| `src/Program.cs` | `src/Poe2StashPricer.App/Program.cs` | part | Rewritten for Avalonia; no single-instance guard or updater. |
 | `src/Updater.cs` | — | no | In-app self-update from GitHub releases; not wanted here. |
 | `src/app.manifest` | — | no | Windows-specific. |
-| `src/app.ico` | `Poe2StashPricer.App/Assets/icon.png` | done | The same artwork, as a PNG: an app with no icon has no face in a taskbar. Only the `.ico` container was Windows-specific. |
+| `src/app.ico` | `src/Poe2StashPricer.App/Assets/icon.png` | done | The same artwork, as a PNG: an app with no icon has no face in a taskbar. Only the `.ico` container was Windows-specific. |
 | `build.ps1` | — | no | Replaced by `dotnet build`. |
 | `.github/workflows/build.yml` | — | no | Windows build and release workflow. |
-| — (new) | `Poe2StashPricer.Core/Storage/Json.cs` | done | The shared `System.Text.Json` options, in place of upstream's per-file `new JavaScriptSerializer()`. |
-| — (new) | `Poe2StashPricer.Core/Session/` | done | What `MainForm` did minus the window: `PricerSession`, `StashModel`, `StashWatcher`, `HoverPricer`, `ScanRunner`, `PriceFeed`, `OverlayContent`, `Money`, `Rows`. |
+| — (new) | `src/Poe2StashPricer.Core/Storage/Json.cs` | done | The shared `System.Text.Json` options, in place of upstream's per-file `new JavaScriptSerializer()`. |
+| — (new) | `src/Poe2StashPricer.Core/Session/` | done | What `MainForm` did minus the window: `PricerSession`, `StashModel`, `StashWatcher`, `HoverPricer`, `ScanRunner`, `PriceFeed`, `OverlayContent`, `Money`, `Rows`. |
 | `tools/` | — | no | `DetectTest`, `LayoutTool`, `make-icon.ps1`, `make-layouts.ps1`: development tools, not ported. |
 
 ## How the Linux platform layer answers each Win32 call

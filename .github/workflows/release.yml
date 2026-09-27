@@ -62,7 +62,7 @@ jobs:
       - name: Publish
         shell: bash
         run: |
-          dotnet publish Poe2StashPricer.App -c Release -r linux-x64 --self-contained -o publish
+          dotnet publish src/Poe2StashPricer.App -c Release -r linux-x64 --self-contained -o publish
 
       - name: Assemble the release archive
         shell: bash

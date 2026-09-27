@@ -72,13 +72,13 @@ dotnet build
 For a standalone binary like the released one:
 
 ```bash
-dotnet publish Poe2StashPricer.App -c Release -r linux-x64 --self-contained -o publish
+dotnet publish src/Poe2StashPricer.App -c Release -r linux-x64 --self-contained -o publish
 ```
 
 ## Running it
 
 ```bash
-dotnet run --project Poe2StashPricer.App
+dotnet run --project src/Poe2StashPricer.App
 ```
 
 A window lists every tab you have scanned, what each is worth and what is in it, with the prices drawn over
@@ -100,7 +100,7 @@ The command line still drives the platform layer directly for testing: open a st
 front, and run
 
 ```bash
-dotnet run --project Poe2StashPricer.App -- --debug-scan --prices
+dotnet run --project src/Poe2StashPricer.App -- --debug-scan --prices
 ```
 
 It finds the game window, reads the stash, hovers every slot, and prints each item with what poe.ninja says
@@ -109,7 +109,7 @@ it is worth. Leave off `--prices` to skip the download and just list what was re
 Once a tab has been scanned, its prices can be shown over the game itself:
 
 ```bash
-dotnet run --project Poe2StashPricer.App -- --overlay
+dotnet run --project src/Poe2StashPricer.App -- --overlay
 ```
 
 That follows the game on its own: open a stash tab it has scanned and the prices appear over the items. It
