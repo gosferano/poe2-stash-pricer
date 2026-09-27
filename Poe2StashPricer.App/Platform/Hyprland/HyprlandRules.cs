@@ -26,6 +26,10 @@ internal static class HyprlandRules
     private static readonly string[] Rules =
     {
         "float = true",
+        // A config of one's own may centre or resize every floating window (CachyOS's default does). The
+        // overlay has to sit exactly over the stash, so it says plainly that it places itself.
+        "center = false",
+        "persistent_size = false",
         "pin = true",
         "no_focus = true",         // never takes the keyboard from the game
         "no_follow_mouse = true",

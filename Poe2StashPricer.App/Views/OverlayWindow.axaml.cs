@@ -20,6 +20,8 @@ internal partial class OverlayWindow : Window
     private readonly OverlaySurface _surface = new OverlaySurface();
     private readonly X11Display? _display;
     private bool _shaped;
+    private bool _unmanaged;
+    private bool _remapping;
 
     public OverlayWindow() : this(null) { }
 
@@ -28,14 +30,39 @@ internal partial class OverlayWindow : Window
         _display = display;
         InitializeComponent();
         Content = _surface;
+        // Before the window is ever mapped: override-redirect is read at map time, and doing it here means
+        // the compositor never gets to place, centre or decorate it even once.
+        TakeOutOfTheWindowManagersHands();
     }
 
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
         MakeClickThrough();
-        Log.Write("overlay window: transparency asked " + string.Join(",", TransparencyLevelHint)
-                  + ", got " + ActualTransparencyLevel + ", click-through " + _shaped);
+        TakeOutOfTheWindowManagersHands();
+    }
+
+    /// <summary>
+    /// The window manager places, sizes and decorates ordinary windows, and a user's own rules can move
+    /// ours somewhere else entirely. An overlay wants none of that, so it is marked override-redirect: the
+    /// compositor then leaves it exactly where it is put. The mark only counts when a window is mapped, so
+    /// the first time round it is taken down and put back up.
+    /// </summary>
+    private void TakeOutOfTheWindowManagersHands()
+    {
+        if (_unmanaged || _display == null || _remapping) return;
+        IPlatformHandle? handle = TryGetPlatformHandle();
+        if (handle == null || handle.Handle == IntPtr.Zero) return;
+        if (!ClickThrough.MakeUnmanaged(_display, handle.Handle)) return;
+        _unmanaged = true;
+
+        _remapping = true;
+        Hide();
+        Show();
+        _remapping = false;
+        MakeClickThrough();
+        Log.Write("overlay window: transparency " + ActualTransparencyLevel + ", click-through " + _shaped
+                  + ", unmanaged " + _unmanaged);
     }
 
     private void MakeClickThrough()
@@ -68,5 +95,8 @@ internal partial class OverlayWindow : Window
         if (!IsVisible) Show();
         MakeClickThrough();
         Topmost = true;   // a fullscreen game can push itself above; ask again every time
+        // An unmanaged window is placed by us and nobody else, so the position is set again after showing:
+        // showing it is what puts it on screen, and only then is there anything to place.
+        Position = new PixelPoint(content.Region.X, top);
     }
 }

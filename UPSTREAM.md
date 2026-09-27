@@ -121,6 +121,16 @@ clipboard goes with it unless a clipboard manager has taken a copy. That is norm
 
 ### Asking the compositor to leave the overlay alone
 
+The overlay has to sit exactly over the stash, which means the compositor must not place it. A generic rule
+in the user's own config is enough to break that - CachyOS's Hyprland defaults centre every floating window,
+which put the overlay in the middle of the screen - so the app says `center = false` and
+`persistent_size = false` for its own window alongside the rest.
+
+Marking the window override-redirect, which is how an X11 overlay normally escapes the window manager
+altogether, did not work here: Avalonia has already created and mapped the window by the time the attribute
+can be set, and its hide/show does not remap it. Worth revisiting if the overlay ever moves to layer-shell.
+
+
 There is no Wayland protocol for "do not blur behind me", and a compositor with blur on will blur the game
 behind the overlay's transparent parts. On Hyprland the app asks over the compositor's IPC socket instead of
 asking the user to edit a config file (`App/Platform/Hyprland/HyprlandRules.cs`), which is the one place

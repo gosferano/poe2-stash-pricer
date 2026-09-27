@@ -14,6 +14,8 @@ hl.window_rule({
     match = { class = "Poe2StashPricer.App" },
 
     float = true,
+    center = false,        -- a generic "centre every floating window" rule would move it off the stash
+    persistent_size = false,
     pin = true,            -- stays put when the workspace changes
     no_focus = true,       -- never takes the keyboard from the game
     no_follow_mouse = true,

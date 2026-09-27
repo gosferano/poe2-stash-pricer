@@ -77,6 +77,12 @@ internal static class X11
 
     public const int ShapeInput = 2, ShapeSet = 0, Unsorted = 0;
 
+    [DllImport(Xlib)] public static extern int XChangeWindowAttributes(IntPtr d, IntPtr w, ulong valuemask, byte[] attributes);
+
+    /// <summary>CWOverrideRedirect, and where override_redirect sits in XSetWindowAttributes.</summary>
+    public const ulong CWOverrideRedirect = 1UL << 9;
+    public const int OverrideRedirectOffset = 88, SetWindowAttributesSize = 112;
+
     [DllImport(Xfixes)] public static extern bool XFixesQueryExtension(IntPtr d, out int eventBase, out int errorBase);
     [DllImport(Xfixes)] public static extern void XFixesSelectSelectionInput(IntPtr d, IntPtr w, ulong selection, ulong eventMask);
 
