@@ -90,7 +90,7 @@ internal sealed class GlobalShortcutsPortal : IAsyncDisposable
         ObjectPath expected = new ObjectPath("/org/freedesktop/portal/desktop/request/" + sender + "/" + token);
         TaskCompletionSource<IDictionary<string, object>> done = new TaskCompletionSource<IDictionary<string, object>>();
 
-        IRequest proxy = _connection.CreateProxy<IRequest>(Service, expected);
+        IRequest proxy = _connection!.CreateProxy<IRequest>(Service, expected);
         using IDisposable watching = await proxy.WatchResponseAsync(answer =>
         {
             if (answer.response == 0) done.TrySetResult(answer.results);

@@ -1,0 +1,97 @@
+name: release
+
+# Manual: release whatever version Directory.Build.props currently names, if it has no tag yet.
+#
+# A cheap "detect" job reads the version (just grep + git, no SDK) and gates the heavy "release" job, so a
+# run that would release nothing never installs the toolchain.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # Lightweight gate: is this version already out?
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.detect.outputs.version }}
+      new: ${{ steps.detect.outputs.new }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags so an existing release can be detected
+
+      - name: Detect version
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -n1 | tr -d '[:space:]')
+          if git rev-parse "v$version" >/dev/null 2>&1; then new=false; else new=true; fi
+          {
+            echo "version=$version"
+            echo "new=$new"
+          } >> "$GITHUB_OUTPUT"
+          echo "version $version, new: $new"
+
+  release:
+    needs: detect
+    if: needs.detect.outputs.new == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create tags + GitHub Releases
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so existing tags can be detected
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build and test
+        shell: bash
+        run: dotnet build -c Release
+
+      # One self-contained file: nothing to install to run it. Trimming stays off while Tmds.DBus builds
+      # its proxies at run time.
+      - name: Publish
+        shell: bash
+        run: |
+          dotnet publish Poe2StashPricer.App -c Release -r linux-x64 --self-contained -o publish
+
+      - name: Assemble the release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.detect.outputs.version }}"
+          dir="poe2-stash-pricer-$version-linux-x64"
+          mkdir -p "$dir"
+          cp publish/poe2-stash-pricer "$dir/"
+          cp packaging/install.sh packaging/poe2-stash-pricer.desktop packaging/icon.png "$dir/"
+          cp packaging/99-poe2-stash-pricer-uinput.rules packaging/hyprland.lua "$dir/"
+          cp README.md LICENSE "$dir/"
+          chmod +x "$dir/poe2-stash-pricer" "$dir/install.sh"
+          tar -czf "$dir.tar.gz" "$dir"
+          sha256sum "$dir.tar.gz" > "$dir.tar.gz.sha256"
+
+      # Scope the notes' baseline to the previous release, so they cover only what is new.
+      - name: Previous tag
+        id: prev
+        shell: bash
+        run: echo "tag=$(git tag --list 'v*' --sort=-v:refname | head -n1)" >> "$GITHUB_OUTPUT"
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.detect.outputs.version }}
+          name: PoE2 Stash Pricer ${{ needs.detect.outputs.version }}
+          previous_tag: ${{ steps.prev.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            poe2-stash-pricer-*-linux-x64.tar.gz
+            poe2-stash-pricer-*-linux-x64.tar.gz.sha256

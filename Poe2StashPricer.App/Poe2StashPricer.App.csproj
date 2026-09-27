@@ -8,6 +8,15 @@
     <Nullable>enable</Nullable>
     <ApplicationIcon />
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!--
+      Published as one self-contained file, so nobody has to install .NET. Trimming and NativeAOT are out
+      while D-Bus is reached through Tmds.DBus: it builds its proxies with Reflection.Emit at run time, and
+      neither survives that.
+    -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>embedded</DebugType>
     <!-- The previous X error handler is called through a raw function pointer; see X11Errors. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
