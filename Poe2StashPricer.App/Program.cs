@@ -1,5 +1,6 @@
 using System;
 using Avalonia;
+using Avalonia.X11;
 
 namespace Poe2StashPricer.App;
 
@@ -56,6 +57,11 @@ internal static class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            // A dropdown is normally a window of its own, which leaves the compositor free to place it -
+            // and a rule like "centre every floating window" then puts it in the middle of the screen.
+            // Drawing popups inside their parent window instead keeps them where they belong, whatever
+            // the desktop's rules say.
+            .With(new X11PlatformOptions { OverlayPopups = true })
             .WithInterFont()
             .LogToTrace();
 }

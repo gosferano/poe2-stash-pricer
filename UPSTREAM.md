@@ -127,6 +127,15 @@ front: it stays above the game, takes no focus from it, passes every click throu
 region), and with the compositor rules below leaves the picture behind it untouched. So the layer-shell
 route is not needed, and the app keeps one renderer instead of two.
 
+### Windows the compositor should not place
+
+Anything the app puts on screen at a position of its own choosing has to survive the user's window rules.
+CachyOS's Hyprland defaults centre every floating window, which moved both the overlay and, less obviously,
+every dropdown: a popup is a window too. The overlay says `center = false` for itself; popups are drawn
+inside their parent window instead (`X11PlatformOptions.OverlayPopups`), which keeps them out of the
+compositor's hands altogether. The cost is that a popup cannot extend past the window's edge, which only
+matters for a control near the bottom.
+
 ### Asking the compositor to leave the overlay alone
 
 The overlay has to sit exactly over the stash, which means the compositor must not place it. A generic rule
