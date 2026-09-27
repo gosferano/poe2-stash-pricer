@@ -30,6 +30,7 @@ internal static class Program
             return DebugClipboard.Run(12, Array.IndexOf(args, "--plain") < 0);
 
         App.OverlayOnly = Array.IndexOf(args, "--overlay") >= 0;
+        OverlayApp.HoverForThisRun = Array.IndexOf(args, "--hover") >= 0;
         App.OverlayTest = Array.IndexOf(args, "--overlay-test") >= 0;
         App.OverlayTestRules = Array.IndexOf(args, "--no-rules") < 0;
         DebugOverlay.Bare = Array.IndexOf(args, "--bare") >= 0;

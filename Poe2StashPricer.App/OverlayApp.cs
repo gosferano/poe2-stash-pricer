@@ -20,9 +20,14 @@ internal static class OverlayApp
     private static OverlayWindow? _overlay;
     private static ControlSocket? _control;
 
+    /// <summary>Set from --hover: price what the mouse rests on instead of scanning the whole tab.</summary>
+    public static bool HoverForThisRun { get; set; }
+
     public static void Attach(IClassicDesktopStyleApplicationLifetime desktop)
     {
         AppSettings settings = AppSettings.Load();
+        // --hover turns price-on-hover on for this run only; the settings file is left alone.
+        if (HoverForThisRun) settings.HoverPrices = true;
         _platform = LinuxPlatform.Create(settings);
         if (_platform.Input == null)
         {
@@ -60,7 +65,9 @@ internal static class OverlayApp
             _platform?.Dispose();
         };
 
-        Console.WriteLine("Overlay running. Open a stash tab in the game; prices of scanned tabs appear over it.");
+        Console.WriteLine(settings.HoverPrices
+            ? "Price on hover. Open a stash tab; rest the mouse on an item and its price appears. F7 gets an unknown tab ready."
+            : "Overlay running. Open a stash tab in the game; prices of scanned tabs appear over it.");
         Console.WriteLine("Bind a key to \"poe2-stash-pricer --scan\" to scan the open tab; Ctrl+C here to stop.");
         _session.Start();
     }
