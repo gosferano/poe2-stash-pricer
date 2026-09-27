@@ -84,6 +84,18 @@ dotnet run --project Poe2StashPricer.App
 A window lists every tab you have scanned, what each is worth and what is in it, with the prices drawn over
 the game as well. `--overlay` leaves the window out and shows only the prices.
 
+On a desktop with a system tray the app puts an icon there and closing the window only puts it away: the
+prices stay on the game and the keys keep working. The icon's menu reopens the window, scans, toggles the
+prices and quits; so does starting the app again, which brings the copy already running to the front rather
+than opening a second one. Quitting from a terminal:
+
+```bash
+poe2-stash-pricer --quit
+```
+
+Where the desktop has no tray, there would be no way back to a hidden window, so closing it ends the app
+instead.
+
 The command line still drives the platform layer directly for testing: open a stash tab, leave the game in
 front, and run
 

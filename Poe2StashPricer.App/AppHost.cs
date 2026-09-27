@@ -22,6 +22,8 @@ internal static class AppHost
     private static OverlayWindow? _overlay;
     private static ControlSocket? _control;
     private static GlobalShortcutsPortal? _shortcuts;
+    private static TrayIcon? _tray;
+    private static bool _quitting;
     private static readonly System.Collections.Generic.List<System.Runtime.InteropServices.PosixSignalRegistration> _signals
         = new System.Collections.Generic.List<System.Runtime.InteropServices.PosixSignalRegistration>();
 
@@ -55,6 +57,55 @@ internal static class AppHost
         try { window.Activate(); } catch (Exception ex) { Log.Write("the window would not take focus: " + ex.Message); }
     }
 
+    /// <summary>Ends the app for good, which the tray's Quit, --quit and a signal all want.</summary>
+    private static void Quit(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        _quitting = true;
+        desktop.Shutdown();
+    }
+
+    private static NativeMenuItem Item(string header, Action act)
+    {
+        NativeMenuItem item = new NativeMenuItem(header);
+        item.Click += (s, e) => act();
+        return item;
+    }
+
+    /// <summary>
+    /// A tray icon, when the desktop has somewhere to put one. It is also what makes closing the window
+    /// safe to treat as "hide": the icon is the way back, and the way out.
+    /// </summary>
+    private static TrayIcon? BuildTray(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        if (!Platform.Linux.TrayHost.IsPresent())
+        {
+            Log.Write("the desktop has no tray, so closing the window ends the app");
+            return null;
+        }
+
+        NativeMenu menu = new NativeMenu();
+        menu.Add(Item("Show window", () => Raise(desktop)));
+        menu.Add(Item("Scan the open tab", () => _session?.Scan()));
+        menu.Add(Item("Prices over the game", () => _session?.ToggleOverlay()));
+        menu.Add(new NativeMenuItemSeparator());
+        menu.Add(Item("Quit", () => Quit(desktop)));
+
+        TrayIcon tray = new TrayIcon
+        {
+            Icon = new WindowIcon(Avalonia.Platform.AssetLoader.Open(
+                       new Uri("avares://poe2-stash-pricer/Assets/icon.png"))),
+            ToolTipText = "PoE2 Stash Pricer",
+            Menu = menu,
+            IsVisible = true,
+        };
+        tray.Clicked += (s, e) => Raise(desktop);
+        // Handing the icon to the application is what gets it in front of the desktop; an icon built and
+        // held on its own never reaches the panel.
+        TrayIcon.SetIcons(Application.Current!, new TrayIcons { tray });
+        Log.Write("showing a tray icon; closing the window only hides it");
+        return tray;
+    }
+
     public static void Attach(IClassicDesktopStyleApplicationLifetime desktop)
     {
         AppSettings settings = AppSettings.Load();
@@ -86,14 +137,27 @@ internal static class AppHost
         else
         {
             MainWindowViewModel model = new MainWindowViewModel(_session, settings);
-            desktop.MainWindow = new MainWindow { DataContext = model };
-            desktop.MainWindow.Show();
+            Window window = new MainWindow { DataContext = model };
+            desktop.MainWindow = window;
+            window.Show();
+
+            _tray = BuildTray(desktop);
+            if (_tray != null)
+                window.Closing += (s, e) =>
+                {
+                    // Closing puts the window away and leaves the app watching, which is the point of the
+                    // tray icon. Quitting closes it for real, and says so.
+                    if (_quitting) return;
+                    e.Cancel = true;
+                    window.Hide();
+                };
         }
 
-        // Closing the window ends the app. There is no tray icon, so a copy left running without one
-        // would be invisible, would keep the hotkeys to itself and would answer the launcher with a
-        // window it can no longer show. --overlay has no window of its own and runs until interrupted.
-        desktop.ShutdownMode = OverlayOnly
+        // With a tray icon, or in --overlay where there is no window at all, the app runs until it is
+        // asked to stop. Otherwise closing the window ends it: a copy with neither a window nor an icon
+        // would be invisible, would keep the hotkeys to itself and would answer the launcher with
+        // nothing anyone can see.
+        desktop.ShutdownMode = OverlayOnly || _tray != null
             ? Avalonia.Controls.ShutdownMode.OnExplicitShutdown
             : Avalonia.Controls.ShutdownMode.OnMainWindowClose;
         // A key bound in the desktop runs "--scan", which arrives here.
@@ -107,6 +171,7 @@ internal static class AppHost
                 if (command == "scan") _session?.Scan();
                 else if (command == "overlay") _session?.ToggleOverlay();
                 else if (command == "show") Raise(desktop);
+                else if (command == "quit") Quit(desktop);
             }
             catch (Exception ex) { Log.Write("the command '" + command + "' failed: " + ex); }
         });
@@ -135,13 +200,14 @@ internal static class AppHost
             {
                 Log.Write(context.Signal + " received: shutting down");
                 context.Cancel = true;
-                Dispatcher.UIThread.Post(() => desktop.Shutdown());
+                Dispatcher.UIThread.Post(() => Quit(desktop));
             }));
 
         desktop.Exit += (s, e) =>
         {
             if (settings.ApplyCompositorRules)
                 Platform.Hyprland.HyprlandRules.Unbind(settings.ScanKey.ToString(), settings.OverlayKey.ToString());
+            _tray?.Dispose();
             _shortcuts?.DisposeAsync().AsTask().Wait(500);
             _control?.Dispose();
             _session?.Dispose();

@@ -15,7 +15,8 @@ internal static class Program
         // clipboard, which is a good way to make a scan fight itself. A second start brings the first one
         // forward instead.
         if (Array.IndexOf(args, "--overlay") < 0 && Array.IndexOf(args, "--scan") < 0
-            && Array.IndexOf(args, "--toggle-overlay") < 0 && !args.Any(a => a.StartsWith("--debug"))
+            && Array.IndexOf(args, "--toggle-overlay") < 0 && Array.IndexOf(args, "--quit") < 0
+            && !args.Any(a => a.StartsWith("--debug"))
             && Platform.Linux.ControlSocket.Send("show"))
         {
             Console.WriteLine("PoE2 Stash Pricer is already running; its window has been brought to the front.");
@@ -27,6 +28,8 @@ internal static class Program
             return Platform.Linux.ControlSocket.Send("scan") ? 0 : Nobody("--scan");
         if (Array.IndexOf(args, "--toggle-overlay") >= 0)
             return Platform.Linux.ControlSocket.Send("overlay") ? 0 : Nobody("--toggle-overlay");
+        if (Array.IndexOf(args, "--quit") >= 0)
+            return Platform.Linux.ControlSocket.Send("quit") ? 0 : Nobody("--quit");
 
         if (Array.IndexOf(args, "--debug-scan") >= 0)
             return DebugScan.Run(Array.IndexOf(args, "--prices") >= 0,
@@ -61,7 +64,7 @@ internal static class Program
 
     private static int Nobody(string what)
     {
-        Console.Error.WriteLine(what + ": no running PoE2 Stash Pricer to tell. Start it with --overlay first.");
+        Console.Error.WriteLine(what + ": no running PoE2 Stash Pricer to tell. Start the app first.");
         return 1;
     }
 
