@@ -42,6 +42,8 @@ internal sealed class UinputDevice : IDisposable
     private readonly object _sync = new object();
     private readonly Func<System.Drawing.Size> _screenSize;
     private int _fd = -1;
+    private DateTime _noticedAt;
+    private bool _noticed;
 
     public UinputDevice(Func<System.Drawing.Size> screenSize)
     {
@@ -65,8 +67,10 @@ internal sealed class UinputDevice : IDisposable
             DevSetup("poe2-stash-pricer");
             if (ioctl_int(_fd, UI_DEV_CREATE, 0) < 0)
                 throw new InvalidOperationException("the virtual input device could not be created (" + Errno() + ")");
-            // The compositor has to notice the new device before it will route anything from it.
-            Thread.Sleep(400);
+            // The compositor has to notice the new device before it will route anything from it. Waiting
+            // for that here would hold up the window, so the deadline is remembered and whatever sends the
+            // first event waits out what is left of it - by then, usually nothing.
+            _noticedAt = DateTime.UtcNow.AddMilliseconds(400);
         }
         catch
         {
@@ -109,6 +113,15 @@ internal sealed class UinputDevice : IDisposable
             throw new InvalidOperationException("uinput device setup failed (" + Errno() + ")");
     }
 
+    /// <summary>Waits out the rest of the settle time, once, before the first event goes out.</summary>
+    private void WaitUntilNoticed()
+    {
+        if (_noticed) return;
+        int left = (int)(_noticedAt - DateTime.UtcNow).TotalMilliseconds;
+        if (left > 0) Thread.Sleep(left);
+        _noticed = true;
+    }
+
     private void Emit(ushort type, ushort code, int value)
     {
         // struct input_event { struct timeval time; __u16 type; __u16 code; __s32 value; }; the kernel fills in the time.
@@ -124,6 +137,7 @@ internal sealed class UinputDevice : IDisposable
 
     public void MoveMouse(int x, int y)
     {
+        WaitUntilNoticed();
         lock (_sync)
         {
             System.Drawing.Size screen = _screenSize();
@@ -140,6 +154,7 @@ internal sealed class UinputDevice : IDisposable
 
     public void SendCopy()
     {
+        WaitUntilNoticed();
         lock (_sync)
         {
             Emit(EV_KEY, KEY_LEFTCTRL, 1);
