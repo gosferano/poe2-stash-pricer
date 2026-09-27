@@ -127,6 +127,25 @@ front: it stays above the game, takes no focus from it, passes every click throu
 region), and with the compositor rules below leaves the picture behind it untouched. So the layer-shell
 route is not needed, and the app keeps one renderer instead of two.
 
+### Hotkeys belong to the desktop
+
+A compositor will not give a key to a window that is not focused, and during a scan the game is focused, so
+the app cannot listen for one. What it can do is register shortcuts with xdg-desktop-portal's GlobalShortcuts
+interface: the app says it has a `scan` and an `overlay` shortcut, the desktop decides which keys those are,
+and it tells the app when one is pressed. The shortcuts then appear in the desktop's own settings and can be
+rebound there, which is how a hotkey ought to work, and one piece of code covers every desktop that
+implements the portal.
+
+The portal does not hand out a key by itself - something still has to point a key at the shortcut. On KDE
+that is System Settings; on Hyprland the app asks the compositor to do it (`hl.dsp.global`), so there is
+nothing to set up. Where neither is possible the key can be bound to `--scan`, which talks to the running
+copy over a socket in `$XDG_RUNTIME_DIR`.
+
+One trap: the name the portal files the shortcuts under is not the app's to choose. It is worked out from
+the process that registered them, so the same binary launched from a terminal, a desktop entry or another
+program can be filed under different names. The app therefore asks the compositor which shortcuts it knows
+and picks out the one carrying its own description, rather than assuming a name.
+
 ### Windows the compositor should not place
 
 Anything the app puts on screen at a position of its own choosing has to survive the user's window rules.

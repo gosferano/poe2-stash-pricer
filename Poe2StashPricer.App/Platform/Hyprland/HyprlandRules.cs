@@ -85,21 +85,32 @@ internal static class HyprlandRules
     ///
     /// The binding lasts until the compositor reloads its config, and is given back when the app closes.
     /// </summary>
-    public static void Bind(string scanKey, string overlayKey)
+    public static void Bind(string scanKey, string overlayKey, bool usePortal)
     {
         if (!IsHyprland) return;
         string? path = SocketPath();
+        if (path == null || !File.Exists(path)) return;
+
+        string? portalAppId = usePortal ? FindPortalAppId(path) : null;
+        if (portalAppId != null)
+        {
+            // The desktop knows these shortcuts, so the key is pointed at the shortcut rather than at a
+            // command: the app is told directly, the same way it would be on any other desktop.
+            BindOne(path, scanKey, "hl.dsp.global(\"" + portalAppId + ":scan\")");
+            BindOne(path, overlayKey, "hl.dsp.global(\"" + portalAppId + ":overlay\")");
+            return;
+        }
         string? exe = Environment.ProcessPath;
-        if (path == null || exe == null || !File.Exists(path)) return;
-        Bind(path, scanKey, exe + " --scan");
-        Bind(path, overlayKey, exe + " --toggle-overlay");
+        if (exe == null) return;
+        BindOne(path, scanKey, "hl.dsp.exec_cmd(\"" + exe + " --scan\")");
+        BindOne(path, overlayKey, "hl.dsp.exec_cmd(\"" + exe + " --toggle-overlay\")");
     }
 
-    private static void Bind(string socket, string key, string command)
+    private static void BindOne(string socket, string key, string dispatcher)
     {
         if (string.IsNullOrEmpty(key)) return;
-        string answer = Send(socket, "eval hl.bind(\"" + key + "\", hl.dsp.exec_cmd(\"" + command + "\"))") ?? "no answer";
-        if (answer == "ok") Log.Write("bound " + key + " to " + command);
+        string answer = Send(socket, "eval hl.bind(\"" + key + "\", " + dispatcher + ")") ?? "no answer";
+        if (answer == "ok") Log.Write("bound " + key + " to " + dispatcher);
         else Log.Write("Hyprland would not bind " + key + ": " + answer);
     }
 
@@ -112,6 +123,34 @@ internal static class HyprlandRules
         foreach (string key in new[] { scanKey, overlayKey })
             if (!string.IsNullOrEmpty(key)) Send(path, "eval hl.unbind(\"" + key + "\")");
     }
+
+    /// <summary>
+    /// Which name the portal filed our shortcuts under. It is not ours to choose: the portal works it out
+    /// from the process that registered them, so an app launched from a terminal, a desktop entry or
+    /// another program can each be filed differently. Rather than guess, the compositor is asked which
+    /// shortcuts it knows and the one carrying our own description is picked out.
+    /// </summary>
+    private static string? FindPortalAppId(string socket)
+    {
+        string? listing = Send(socket, "globalshortcuts");
+        if (listing == null) return null;
+        foreach (string line in listing.Split('\n'))
+        {
+            int arrow = line.IndexOf("->", StringComparison.Ordinal);
+            if (arrow < 0) continue;
+            string name = line.Substring(0, arrow).Trim();
+            string description = line.Substring(arrow + 2).Trim();
+            if (description != ScanDescription || !name.EndsWith(":scan", StringComparison.Ordinal)) continue;
+            string appId = name.Substring(0, name.Length - ":scan".Length);
+            Log.Write("the portal filed our shortcuts under '" + appId + "'");
+            return appId;
+        }
+        Log.Write("the portal's shortcuts were not found in the compositor's list");
+        return null;
+    }
+
+    public const string ScanDescription = "Scan the stash tab that is open";
+    public const string OverlayDescription = "Show or hide the prices over the game";
 
     private static string? SocketPath()
     {

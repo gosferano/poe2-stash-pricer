@@ -20,6 +20,18 @@ internal static class AppHost
     private static PricerSession? _session;
     private static OverlayWindow? _overlay;
     private static ControlSocket? _control;
+    private static GlobalShortcutsPortal? _shortcuts;
+
+    private static async System.Threading.Tasks.Task RegisterShortcutsAsync(AppSettings settings)
+    {
+        bool registered = await _shortcuts!.RegisterAsync(new[]
+        {
+            ("scan", Platform.Hyprland.HyprlandRules.ScanDescription, settings.ScanKey.ToString()),
+            ("overlay", Platform.Hyprland.HyprlandRules.OverlayDescription, settings.OverlayKey.ToString()),
+        });
+        if (settings.ApplyCompositorRules)
+            Platform.Hyprland.HyprlandRules.Bind(settings.ScanKey.ToString(), settings.OverlayKey.ToString(), registered);
+    }
 
     /// <summary>Set from --hover: price what the mouse rests on instead of scanning the whole tab.</summary>
     public static bool HoverForThisRun { get; set; }
@@ -71,14 +83,23 @@ internal static class AppHost
             else if (command == "overlay") _session?.ToggleOverlay();
         });
         _control.Listen();
-        // And ask the compositor to point the keys at it.
-        if (settings.ApplyCompositorRules)
-            Platform.Hyprland.HyprlandRules.Bind(settings.ScanKey.ToString(), settings.OverlayKey.ToString());
+
+        // The desktop's own shortcuts come first: they show up in its settings, can be rebound there and
+        // work the same everywhere. Hyprland is then asked to point the keys at them, so nothing has to be
+        // set up by hand; on a desktop that cannot be asked, the user binds the shortcut themselves.
+        _shortcuts = new GlobalShortcutsPortal();
+        _shortcuts.Pressed += id => Dispatcher.UIThread.Post(() =>
+        {
+            if (id == "scan") _session?.Scan();
+            else if (id == "overlay") _session?.ToggleOverlay();
+        });
+        _ = RegisterShortcutsAsync(settings);
 
         desktop.Exit += (s, e) =>
         {
             if (settings.ApplyCompositorRules)
                 Platform.Hyprland.HyprlandRules.Unbind(settings.ScanKey.ToString(), settings.OverlayKey.ToString());
+            _shortcuts?.DisposeAsync().AsTask().Wait(500);
             _control?.Dispose();
             _session?.Dispose();
             _platform?.Dispose();
