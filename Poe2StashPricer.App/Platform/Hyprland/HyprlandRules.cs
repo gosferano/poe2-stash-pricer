@@ -25,7 +25,7 @@ internal static class HyprlandRules
     /// rules are for the overlay alone. Applied to the main window they would stop it ever taking focus,
     /// and the desktop's own "close the focused window" would act on something else entirely.
     /// </summary>
-    private const string WindowClass = "Poe2StashPricer.App";
+    private const string WindowClass = "poe2-stash-pricer";
 
     /// <summary>Must match the overlay window's Title exactly.</summary>
     public const string OverlayTitle = "PoE2 Stash Pricer overlay";

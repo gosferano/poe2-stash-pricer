@@ -13,7 +13,7 @@
 -- The title matters: the app's main window shares the class, and these rules must not reach it (no_focus
 -- on the main window would stop you ever focusing or closing it).
 hl.window_rule({
-    match = { class = "Poe2StashPricer.App", title = "PoE2 Stash Pricer overlay" },
+    match = { class = "poe2-stash-pricer", title = "PoE2 Stash Pricer overlay" },
 
     float = true,
     center = false,        -- a generic "centre every floating window" rule would move it off the stash
@@ -39,7 +39,7 @@ hl.window_rule({
 --
 -- Change the path to wherever the app lives.
 
-local pricer = "/home/gosferano/Projects/poe2-stash-pricer/Poe2StashPricer.App/bin/Debug/net10.0/Poe2StashPricer.App"
+local pricer = "poe2-stash-pricer"
 
 hl.bind("F7", hl.dsp.exec_cmd(pricer .. " --scan"))
 hl.bind("F8", hl.dsp.exec_cmd(pricer .. " --toggle-overlay"))

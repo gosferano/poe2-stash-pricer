@@ -4,6 +4,7 @@
         x:Class="Poe2StashPricer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="PoE2 Stash Pricer"
+        Icon="avares://poe2-stash-pricer/Assets/icon.png"
         Width="1000" Height="700" MinWidth="820" MinHeight="520"
         Background="#14140F">
 

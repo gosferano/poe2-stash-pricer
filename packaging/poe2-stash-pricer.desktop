@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=PoE2 Stash Pricer
+GenericName=Stash pricing tool
+Comment=Prices the special stash tabs of Path of Exile 2 with poe.ninja
+Exec=poe2-stash-pricer
+Icon=poe2-stash-pricer
+Terminal=false
+Categories=Game;Utility;
+Keywords=poe;exile;stash;price;
+# Ties the running window back to this entry, so the taskbar shows this name and icon.
+StartupWMClass=poe2-stash-pricer

@@ -63,7 +63,8 @@ Status: **done** = ported, **part** = partly done, **later** = planned for a lat
 | `src/Theme.cs` | Avalonia styles | later | Phase 4. |
 | `src/Program.cs` | `Poe2StashPricer.App/Program.cs` | part | Rewritten for Avalonia; no single-instance guard or updater. |
 | `src/Updater.cs` | — | no | In-app self-update from GitHub releases; not wanted here. |
-| `src/app.manifest`, `src/app.ico` | — | no | Windows-specific. |
+| `src/app.manifest` | — | no | Windows-specific. |
+| `src/app.ico` | `Poe2StashPricer.App/Assets/icon.png` | done | The same artwork, as a PNG: an app with no icon has no face in a taskbar. Only the `.ico` container was Windows-specific. |
 | `build.ps1` | — | no | Replaced by `dotnet build`. |
 | `.github/workflows/build.yml` | — | no | Windows build and release workflow. |
 | — (new) | `Poe2StashPricer.Core/Storage/Json.cs` | done | The shared `System.Text.Json` options, in place of upstream's per-file `new JavaScriptSerializer()`. |

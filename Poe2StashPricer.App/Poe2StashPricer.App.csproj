@@ -3,12 +3,18 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Poe2StashPricer.App</RootNamespace>
+    <!-- The binary, the window class, the desktop entry and the command line all answer to one name. -->
+    <AssemblyName>poe2-stash-pricer</AssemblyName>
     <Nullable>enable</Nullable>
     <ApplicationIcon />
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!-- The previous X error handler is called through a raw function pointer; see X11Errors. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.3" />
