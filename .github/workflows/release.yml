@@ -72,10 +72,11 @@ jobs:
           dir="poe2-stash-pricer-$version-linux-x64"
           mkdir -p "$dir"
           cp publish/poe2-stash-pricer "$dir/"
-          cp packaging/install.sh packaging/poe2-stash-pricer.desktop packaging/icon.png "$dir/"
+          cp packaging/install.sh packaging/uninstall.sh "$dir/"
+          cp packaging/poe2-stash-pricer.desktop packaging/icon.png "$dir/"
           cp packaging/99-poe2-stash-pricer-uinput.rules packaging/hyprland.lua "$dir/"
           cp README.md LICENSE "$dir/"
-          chmod +x "$dir/poe2-stash-pricer" "$dir/install.sh"
+          chmod +x "$dir/poe2-stash-pricer" "$dir/install.sh" "$dir/uninstall.sh"
           tar -czf "$dir.tar.gz" "$dir"
           sha256sum "$dir.tar.gz" > "$dir.tar.gz.sha256"
 

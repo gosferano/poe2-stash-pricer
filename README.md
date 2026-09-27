@@ -26,6 +26,23 @@ That puts `poe2-stash-pricer` in `~/.local/bin`, with an icon and a desktop entr
 launcher and taskbar. The binary is a single 23 MB file carrying its own copy of .NET; nothing else has to
 be installed.
 
+Three files go in, and nothing else is touched:
+
+```
+~/.local/bin/poe2-stash-pricer
+~/.local/share/applications/poe2-stash-pricer.desktop
+~/.local/share/icons/hicolor/256x256/apps/poe2-stash-pricer.png
+```
+
+To remove them again:
+
+```bash
+./uninstall.sh
+```
+
+That keeps your settings, learned tabs and scans in `~/.config/poe2-stash-pricer`; `./uninstall.sh --purge`
+removes those as well. Set `PREFIX` on either script to install somewhere other than `~/.local`.
+
 ## Requirements
 
 - A Wayland desktop with XWayland (the game runs as an XWayland client under Proton)
