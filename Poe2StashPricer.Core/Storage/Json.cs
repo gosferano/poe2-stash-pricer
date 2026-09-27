@@ -1,5 +1,7 @@
+using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Poe2StashPricer.Storage;
 
@@ -11,9 +13,17 @@ namespace Poe2StashPricer.Storage;
 /// </summary>
 internal static class Json
 {
-    private static readonly JsonSerializerOptions Options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    /// <summary>The compile-time description of <typeparamref name="T"/>; see <see cref="JsonContext"/>.</summary>
+    private static JsonTypeInfo<T> TypeInfo<T>()
+    {
+        JsonTypeInfo info = JsonContext.Default.GetTypeInfo(typeof(T));
+        if (info == null)
+            throw new InvalidOperationException(typeof(T).Name + " is not listed in " + nameof(JsonContext)
+                                                + ", so it cannot be read or written");
+        return (JsonTypeInfo<T>)info;
+    }
 
-    public static T Read<T>(Stream json) { return JsonSerializer.Deserialize<T>(json, Options); }
+    public static T Read<T>(Stream json) { return JsonSerializer.Deserialize(json, TypeInfo<T>()); }
 
     public static T Load<T>(string path)
     {
@@ -24,6 +34,6 @@ internal static class Json
     public static void Save<T>(string path, T value)
     {
         using (FileStream f = File.Create(path))
-            JsonSerializer.Serialize(f, value, Options);
+            JsonSerializer.Serialize(f, value, TypeInfo<T>());
     }
 }

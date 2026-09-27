@@ -180,6 +180,20 @@ asking the user to edit a config file (`App/Platform/Hyprland/HyprlandRules.cs`)
 compositor-specific code earns its keep. It is optional, scoped to the app's own window class, and lasts
 only until the compositor reloads. KWin will need its own answer when KDE is tested.
 
+### Keeping the download small
+
+A self-contained build starts at 97 MB. Trimming and compressing brings it to 23 MB, and both are set in
+the app's csproj so a plain `dotnet publish` produces the same thing the release does.
+
+Trimming has one trap worth knowing about. `System.Text.Json` works by reflection, which a trimmed build
+cannot follow: it drops the properties and then loads *nothing*, without a word. The app still started and
+showed a window - it simply had no tabs. The types are now listed in `Storage/JsonContext.cs` so the
+serialiser is built at compile time, and `Tmds.DBus`, which builds its D-Bus proxies by reflection too, is
+kept whole rather than trimmed.
+
+NativeAOT stays out for the same reflection reason, and bundling ICU would save nothing here: a Linux build
+uses the system's.
+
 ## Deliberate behaviour changes
 
 Recorded here so they are not mistaken for porting bugs when comparing with upstream.

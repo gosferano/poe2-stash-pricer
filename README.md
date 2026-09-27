@@ -23,7 +23,8 @@ Download the latest release, unpack it and run the installer:
 ```
 
 That puts `poe2-stash-pricer` in `~/.local/bin`, with an icon and a desktop entry so it appears in your
-launcher and taskbar. The binary carries its own copy of .NET; nothing else has to be installed.
+launcher and taskbar. The binary is a single 23 MB file carrying its own copy of .NET; nothing else has to
+be installed.
 
 ## Requirements
 

@@ -9,13 +9,14 @@
     <ApplicationIcon />
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!--
-      Published as one self-contained file, so nobody has to install .NET. Trimming and NativeAOT are out
-      while D-Bus is reached through Tmds.DBus: it builds its proxies with Reflection.Emit at run time, and
-      neither survives that.
+      Published as one self-contained file, so nobody has to install .NET, and trimmed and compressed so
+      that file stays a sensible size (97 MB down to 23 MB).
+      NativeAOT is still out: Tmds.DBus builds its D-Bus proxies with Reflection.Emit at run time.
     -->
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <PublishTrimmed>false</PublishTrimmed>
+    <PublishTrimmed>true</PublishTrimmed>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <DebugType>embedded</DebugType>
     <!-- The previous X error handler is called through a raw function pointer; see X11Errors. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -23,6 +24,15 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Tmds.DBus builds its proxies by reflection, so the trimmer cannot see what they need and says so.
+      Keeping the whole assembly costs little and removes the guesswork; JSON is handled instead by
+      listing its types in JsonContext, which the trimmer can follow.
+    -->
+    <TrimmerRootAssembly Include="Tmds.DBus" />
   </ItemGroup>
 
   <ItemGroup>
