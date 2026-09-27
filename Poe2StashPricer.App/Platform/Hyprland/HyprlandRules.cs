@@ -78,6 +78,41 @@ internal static class HyprlandRules
         Log.Write("Hyprland overlay rules applied: " + applied + " of " + Rules.Length);
     }
 
+    /// <summary>
+    /// Binds the app's own keys. A compositor will not give a key to a window that is not focused, so the
+    /// app cannot listen for one while the game is in front; what it can do is ask the compositor to run a
+    /// command, which then tells the running copy what to do through its socket.
+    ///
+    /// The binding lasts until the compositor reloads its config, and is given back when the app closes.
+    /// </summary>
+    public static void Bind(string scanKey, string overlayKey)
+    {
+        if (!IsHyprland) return;
+        string? path = SocketPath();
+        string? exe = Environment.ProcessPath;
+        if (path == null || exe == null || !File.Exists(path)) return;
+        Bind(path, scanKey, exe + " --scan");
+        Bind(path, overlayKey, exe + " --toggle-overlay");
+    }
+
+    private static void Bind(string socket, string key, string command)
+    {
+        if (string.IsNullOrEmpty(key)) return;
+        string answer = Send(socket, "eval hl.bind(\"" + key + "\", hl.dsp.exec_cmd(\"" + command + "\"))") ?? "no answer";
+        if (answer == "ok") Log.Write("bound " + key + " to " + command);
+        else Log.Write("Hyprland would not bind " + key + ": " + answer);
+    }
+
+    /// <summary>Gives the keys back, so they mean what they did before the app started.</summary>
+    public static void Unbind(string scanKey, string overlayKey)
+    {
+        if (!IsHyprland) return;
+        string? path = SocketPath();
+        if (path == null || !File.Exists(path)) return;
+        foreach (string key in new[] { scanKey, overlayKey })
+            if (!string.IsNullOrEmpty(key)) Send(path, "eval hl.unbind(\"" + key + "\")");
+    }
+
     private static string? SocketPath()
     {
         string? runtime = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR");

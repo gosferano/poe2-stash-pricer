@@ -71,9 +71,14 @@ internal static class AppHost
             else if (command == "overlay") _session?.ToggleOverlay();
         });
         _control.Listen();
+        // And ask the compositor to point the keys at it.
+        if (settings.ApplyCompositorRules)
+            Platform.Hyprland.HyprlandRules.Bind(settings.ScanKey.ToString(), settings.OverlayKey.ToString());
 
         desktop.Exit += (s, e) =>
         {
+            if (settings.ApplyCompositorRules)
+                Platform.Hyprland.HyprlandRules.Unbind(settings.ScanKey.ToString(), settings.OverlayKey.ToString());
             _control?.Dispose();
             _session?.Dispose();
             _platform?.Dispose();
