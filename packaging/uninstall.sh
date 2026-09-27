@@ -9,12 +9,16 @@ purge=false
 
 # A copy that is still running would put its hotkeys back on the way out; ask it to stop first.
 if command -v poe2-stash-pricer >/dev/null && [ -S "${XDG_RUNTIME_DIR:-/tmp}/poe2-stash-pricer.sock" ]; then
-  echo "a copy is still running - close it first, so it gives its hotkeys back"
+  echo "a copy is still running - stop it first, so it gives its hotkeys back:"
+  echo "  poe2-stash-pricer --quit"
 fi
 
+# The installed copy of this script goes last. Removing it while it runs is safe: the shell reads on from
+# the open file, and an unpacked release's own copy is left alone.
 for f in "$prefix/bin/poe2-stash-pricer" \
          "$prefix/share/applications/poe2-stash-pricer.desktop" \
-         "$prefix/share/icons/hicolor/256x256/apps/poe2-stash-pricer.png"; do
+         "$prefix/share/icons/hicolor/256x256/apps/poe2-stash-pricer.png" \
+         "$prefix/bin/poe2-stash-pricer-uninstall"; do
   if [ -e "$f" ]; then rm -f "$f"; echo "removed $f"; fi
 done
 

@@ -12,6 +12,9 @@ prefix="${PREFIX:-$HOME/.local}"
 install -Dm755 "$binary"        "$prefix/bin/poe2-stash-pricer"
 install -Dm644 "$here/icon.png" "$prefix/share/icons/hicolor/256x256/apps/poe2-stash-pricer.png"
 
+# The uninstaller goes in too, so removing the app later does not mean keeping the download around.
+install -Dm755 "$here/uninstall.sh" "$prefix/bin/poe2-stash-pricer-uninstall"
+
 # The entry names the binary outright rather than leaving it to PATH: a launcher does not run a login
 # shell, so it often has no ~/.local/bin, and an entry it cannot resolve simply does nothing at all.
 install -Dm644 "$here/poe2-stash-pricer.desktop" "$prefix/share/applications/poe2-stash-pricer.desktop"
@@ -21,6 +24,7 @@ command -v update-desktop-database >/dev/null && update-desktop-database "$prefi
 command -v gtk-update-icon-cache  >/dev/null && gtk-update-icon-cache -f -t "$prefix/share/icons/hicolor" 2>/dev/null || true
 
 echo "installed to $prefix"
+echo "to remove it later: $prefix/bin/poe2-stash-pricer-uninstall"
 case ":$PATH:" in
   *":$prefix/bin:"*) ;;
   *) echo "note: $prefix/bin is not on your PATH, so the launcher entry works but 'poe2-stash-pricer'"
