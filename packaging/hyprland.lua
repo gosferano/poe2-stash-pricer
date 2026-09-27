@@ -39,7 +39,8 @@ hl.window_rule({
 --
 -- Change the path to wherever the app lives.
 
-local pricer = "poe2-stash-pricer"
+-- The full path, not just the name: what runs a binding has no login shell and often no ~/.local/bin.
+local pricer = os.getenv("HOME") .. "/.local/bin/poe2-stash-pricer"
 
 hl.bind("F7", hl.dsp.exec_cmd(pricer .. " --scan"))
 hl.bind("F8", hl.dsp.exec_cmd(pricer .. " --toggle-overlay"))

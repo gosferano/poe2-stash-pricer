@@ -9,9 +9,13 @@ prefix="${PREFIX:-$HOME/.local}"
 
 [ -x "$binary" ] || { echo "no poe2-stash-pricer binary at $binary" >&2; exit 1; }
 
-install -Dm755 "$binary"                      "$prefix/bin/poe2-stash-pricer"
+install -Dm755 "$binary"        "$prefix/bin/poe2-stash-pricer"
+install -Dm644 "$here/icon.png" "$prefix/share/icons/hicolor/256x256/apps/poe2-stash-pricer.png"
+
+# The entry names the binary outright rather than leaving it to PATH: a launcher does not run a login
+# shell, so it often has no ~/.local/bin, and an entry it cannot resolve simply does nothing at all.
 install -Dm644 "$here/poe2-stash-pricer.desktop" "$prefix/share/applications/poe2-stash-pricer.desktop"
-install -Dm644 "$here/icon.png"               "$prefix/share/icons/hicolor/256x256/apps/poe2-stash-pricer.png"
+sed -i "s|^Exec=.*|Exec=$prefix/bin/poe2-stash-pricer|" "$prefix/share/applications/poe2-stash-pricer.desktop"
 
 command -v update-desktop-database >/dev/null && update-desktop-database "$prefix/share/applications" || true
 command -v gtk-update-icon-cache  >/dev/null && gtk-update-icon-cache -f -t "$prefix/share/icons/hicolor" 2>/dev/null || true
@@ -19,7 +23,8 @@ command -v gtk-update-icon-cache  >/dev/null && gtk-update-icon-cache -f -t "$pr
 echo "installed to $prefix"
 case ":$PATH:" in
   *":$prefix/bin:"*) ;;
-  *) echo "note: $prefix/bin is not on your PATH" ;;
+  *) echo "note: $prefix/bin is not on your PATH, so the launcher entry works but 'poe2-stash-pricer'"
+     echo "      typed in a terminal will not. Add it to your PATH for that." ;;
 esac
 
 if [ ! -e /dev/uinput ] || [ ! -w /dev/uinput ]; then

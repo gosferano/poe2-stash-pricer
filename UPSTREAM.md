@@ -180,6 +180,13 @@ asking the user to edit a config file (`App/Platform/Hyprland/HyprlandRules.cs`)
 compositor-specific code earns its keep. It is optional, scoped to the app's own window class, and lasts
 only until the compositor reloads. KWin will need its own answer when KDE is tested.
 
+### The desktop entry names the binary outright
+
+A launcher does not run a login shell, so it often has no `~/.local/bin` on its PATH - and an entry whose
+`Exec=` it cannot resolve does nothing at all, with no error anywhere. `install.sh` therefore writes the
+full path into the entry at install time rather than leaving the name to be looked up. The Hyprland fallback
+config does the same for its key bindings.
+
 ### Keeping the download small
 
 A self-contained build starts at 97 MB. Trimming and compressing brings it to 23 MB, and both are set in
