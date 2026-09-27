@@ -69,6 +69,9 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 dotnet build
 ```
 
+Package versions all live in [Directory.Packages.props](Directory.Packages.props); a project names the
+package it wants and nothing else.
+
 For a standalone binary like the released one:
 
 ```bash
