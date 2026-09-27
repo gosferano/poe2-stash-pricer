@@ -119,6 +119,14 @@ protocol. There the user's clipboard cannot be put back, and the app says so.
 A selection belongs to a running program on Wayland just as on X: when the app exits, what it put on the
 clipboard goes with it unless a clipboard manager has taken a copy. That is normal for every application.
 
+### Asking the compositor to leave the overlay alone
+
+There is no Wayland protocol for "do not blur behind me", and a compositor with blur on will blur the game
+behind the overlay's transparent parts. On Hyprland the app asks over the compositor's IPC socket instead of
+asking the user to edit a config file (`App/Platform/Hyprland/HyprlandRules.cs`), which is the one place
+compositor-specific code earns its keep. It is optional, scoped to the app's own window class, and lasts
+only until the compositor reloads. KWin will need its own answer when KDE is tested.
+
 ## Deliberate behaviour changes
 
 Recorded here so they are not mistaken for porting bugs when comparing with upstream.

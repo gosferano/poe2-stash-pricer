@@ -29,6 +29,9 @@ internal static class OverlayApp
             Console.Error.WriteLine("the overlay will still show saved prices.");
         }
 
+        // Before the window appears: a compositor decides a window's rules when it is mapped.
+        if (settings.ApplyCompositorRules) Platform.Hyprland.HyprlandRules.Apply();
+
         _overlay = new OverlayWindow(_platform.Display);
         _session = new PricerSession(settings, _platform.Capture, _platform.Game, _platform.Input!,
                                      _platform.Keys, _platform.Clipboard);

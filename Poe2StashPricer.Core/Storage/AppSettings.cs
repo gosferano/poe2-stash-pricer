@@ -13,6 +13,7 @@ public class AppSettings
     public int HoverDelay { get; set; }
     public int CopyTimeout { get; set; }
     public bool HoverPrices { get; set; }         // price the item the mouse rests on instead of scanning the whole tab
+    public bool ApplyCompositorRules { get; set; } // ask the compositor not to blur or fade the overlay
     public string GameWindowClass { get; set; }  // WM_CLASS of the game window; steam_app_<id> under Proton
     public string GameWindowTitle { get; set; }  // part of its title, for a copy whose class differs
 
@@ -25,6 +26,7 @@ public class AppSettings
         OverlayKey = new Hotkey("F8");
         HoverDelay = 45;
         CopyTimeout = 150;
+        ApplyCompositorRules = true;
         GameWindowClass = "steam_app_2694490";
         GameWindowTitle = "Path of Exile 2";
     }

@@ -4,6 +4,9 @@
 -- (which is the game, and is what makes the stash look washed out), draws a border and a shadow around it,
 -- animates it, fades it because it is never focused, and lets it take focus from the game.
 --
+-- The app applies these itself over Hyprland's IPC socket when it starts, so this file is only needed if
+-- you turned that off ("ApplyCompositorRules": false) or would rather have them in your own config.
+--
 -- Hyprland 0.56 and later read Lua. Require this from ~/.config/hypr/hyprland.lua, or paste the call into
 -- your own config/windowrules.lua.
 
