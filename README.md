@@ -116,19 +116,24 @@ transparent window.
 ### Scanning with a key
 
 F7 scans the open tab and F8 hides or shows the prices. A compositor will not give a key to a window that is
-not focused, so the app cannot listen for one while you play; instead it asks the compositor to run a
-command, which tells the running copy what to do through a socket. On Hyprland it binds and unbinds those
-keys itself, so there is nothing to set up.
+not focused, so the app cannot listen for one while you play. It asks the desktop instead, two ways, in this
+order:
 
-The command behind the key works on its own too, and is what to bind on another desktop:
+- The desktop's own global shortcuts, over xdg-desktop-portal. Shortcuts registered this way appear in the
+  desktop's settings and can be rebound there. The portal only answers an app it can put a name to, and a
+  plain binary started from a launcher often has no app id it will accept; then this is skipped.
+- Hyprland's own bindings, set when the app starts and handed back when it exits, so there is nothing to set
+  up. Each key runs the app again with `--scan` or `--toggle-overlay`, and that copy tells the running one
+  what to do through a socket.
+
+Which one is in use is in the log. On any other desktop, bind the command yourself:
 
 ```bash
-dotnet run --project Poe2StashPricer.App -- --scan
+poe2-stash-pricer --scan
 ```
 
 `--toggle-overlay` is the other one. [packaging/hyprland.lua](packaging/hyprland.lua) has both as config, for
-anyone who would rather not have the app do it. (The xdg-desktop-portal GlobalShortcuts interface would let
-the app ask the desktop properly, and is the better answer later.)
+anyone who would rather not have the app do it.
 
 A scan is a snapshot: the prices stay where the items were when you scanned. Move things about and press the
 key again. Only tabs you have scanned show anything - each tab needs its own scan.
