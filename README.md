@@ -14,11 +14,22 @@ Not affiliated with, endorsed by or connected to Grinding Gear Games or poe.ninj
 
 Early work in progress; not usable yet. See [UPSTREAM.md](UPSTREAM.md) for what has been ported so far.
 
+## Installing
+
+Download the latest release, unpack it and run the installer:
+
+```bash
+./install.sh
+```
+
+That puts `poe2-stash-pricer` in `~/.local/bin`, with an icon and a desktop entry so it appears in your
+launcher and taskbar. The binary carries its own copy of .NET; nothing else has to be installed.
+
 ## Requirements
 
-- .NET 10 SDK
 - A Wayland desktop with XWayland (the game runs as an XWayland client under Proton)
 - Access to `/dev/uinput`, to move the mouse during a scan
+- .NET 10 SDK, only to build it yourself
 
 Steam already sets that access up: `/usr/lib/udev/rules.d/60-steam-input.rules` hands `/dev/uinput` to the
 logged-in user, so if you launch Path of Exile 2 through Steam there is nothing to do. Otherwise install the
@@ -36,6 +47,12 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 ```bash
 dotnet build
+```
+
+For a standalone binary like the released one:
+
+```bash
+dotnet publish Poe2StashPricer.App -c Release -r linux-x64 --self-contained -o publish
 ```
 
 ## Running it
