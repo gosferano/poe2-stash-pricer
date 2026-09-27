@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Poe2StashPricer.App.Platform.Linux;
+using Poe2StashPricer.App.ViewModels;
 using Poe2StashPricer.App.Views;
 using Poe2StashPricer.Session;
 using Poe2StashPricer.Storage;
@@ -10,10 +11,10 @@ using Poe2StashPricer.Storage;
 namespace Poe2StashPricer.App;
 
 /// <summary>
-/// The overlay on its own, with no main window: the session follows the game and the prices appear over the
-/// stash. This is the app as far as it goes until the rest of the interface exists.
+/// The app: the platform, the session, the window that lists what was found and the prices drawn over the
+/// game. With --overlay only the prices are shown, which is useful when the window is in the way.
 /// </summary>
-internal static class OverlayApp
+internal static class AppHost
 {
     private static LinuxPlatform? _platform;
     private static PricerSession? _session;
@@ -22,6 +23,9 @@ internal static class OverlayApp
 
     /// <summary>Set from --hover: price what the mouse rests on instead of scanning the whole tab.</summary>
     public static bool HoverForThisRun { get; set; }
+
+    /// <summary>Set from --overlay: the prices over the game, with no window of our own.</summary>
+    public static bool OverlayOnly { get; set; }
 
     public static void Attach(IClassicDesktopStyleApplicationLifetime desktop)
     {
@@ -46,7 +50,17 @@ internal static class OverlayApp
 
         // The session runs on its own thread; only this thread may touch a window.
         _session.OverlayChanged += content => Dispatcher.UIThread.Post(() => _overlay.Update(content));
-        _session.StatusChanged += text => Console.WriteLine("status: " + text);
+
+        if (OverlayOnly)
+        {
+            _session.StatusChanged += text => Console.WriteLine("status: " + text);
+        }
+        else
+        {
+            MainWindowViewModel model = new MainWindowViewModel(_session, settings);
+            desktop.MainWindow = new MainWindow { DataContext = model };
+            desktop.MainWindow.Show();
+        }
 
         desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
         // A key bound in the desktop runs "--scan", which arrives here.
@@ -65,10 +79,13 @@ internal static class OverlayApp
             _platform?.Dispose();
         };
 
-        Console.WriteLine(settings.HoverPrices
-            ? "Price on hover. Open a stash tab; rest the mouse on an item and its price appears. F7 gets an unknown tab ready."
-            : "Overlay running. Open a stash tab in the game; prices of scanned tabs appear over it.");
-        Console.WriteLine("Bind a key to \"poe2-stash-pricer --scan\" to scan the open tab; Ctrl+C here to stop.");
+        if (OverlayOnly)
+        {
+            Console.WriteLine(settings.HoverPrices
+                ? "Price on hover. Open a stash tab; rest the mouse on an item and its price appears."
+                : "Overlay running. Open a stash tab in the game; prices of scanned tabs appear over it.");
+            Console.WriteLine("Bind a key to \"poe2-stash-pricer --scan\" to scan the open tab; Ctrl+C here to stop.");
+        }
         _session.Start();
     }
 

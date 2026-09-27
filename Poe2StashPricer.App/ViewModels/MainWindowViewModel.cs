@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -117,11 +118,15 @@ public partial class MainWindowViewModel : ObservableObject
             PriceTable table = _session.Prices.Table;
             string mode = _settings.DisplayCurrency ?? "auto";
 
-            if (Leagues.Count != _session.Prices.Leagues.Count)
+            bool leaguesChanged = !Leagues.SequenceEqual(_session.Prices.Leagues);
+            if (leaguesChanged)
             {
                 Leagues.Clear();
                 foreach (string league in _session.Prices.Leagues) Leagues.Add(league);
             }
+            // Emptying the list drops the box's selection, and re-assigning the same value would raise no
+            // change for it to notice, so the selection is cleared first and put back.
+            if (leaguesChanged) SelectedLeague = null;
             if (_settings.League != null && SelectedLeague != _settings.League) SelectedLeague = _settings.League;
 
             if (_session.Model.ScannedTabs == 0)

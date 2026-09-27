@@ -10,8 +10,10 @@
 -- Hyprland 0.56 and later read Lua. Require this from ~/.config/hypr/hyprland.lua, or paste the call into
 -- your own config/windowrules.lua.
 
+-- The title matters: the app's main window shares the class, and these rules must not reach it (no_focus
+-- on the main window would stop you ever focusing or closing it).
 hl.window_rule({
-    match = { class = "Poe2StashPricer.App" },
+    match = { class = "Poe2StashPricer.App", title = "PoE2 Stash Pricer overlay" },
 
     float = true,
     center = false,        -- a generic "centre every floating window" rule would move it off the stash

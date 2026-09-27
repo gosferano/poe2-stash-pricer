@@ -81,7 +81,12 @@ public class PriceFeed
             if (!string.IsNullOrEmpty(_settings.League)) leagues.Add(_settings.League);
         }
 
-        if (leagues.Count > 0) Leagues = leagues;
+        if (leagues.Count > 0)
+        {
+            Leagues = leagues;
+            Action changed = Changed;
+            if (changed != null) changed();   // the league list is part of what a window shows
+        }
         if (_settings.League == null || leagues.IndexOf(_settings.League) < 0)
         {
             if (leagues.Count > 0)

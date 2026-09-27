@@ -20,8 +20,15 @@ namespace Poe2StashPricer.App.Platform.Hyprland;
 /// </summary>
 internal static class HyprlandRules
 {
-    /// <summary>The window class Avalonia gives our windows.</summary>
+    /// <summary>
+    /// The window class Avalonia gives our windows - all of them, which is why the title matters too: these
+    /// rules are for the overlay alone. Applied to the main window they would stop it ever taking focus,
+    /// and the desktop's own "close the focused window" would act on something else entirely.
+    /// </summary>
     private const string WindowClass = "Poe2StashPricer.App";
+
+    /// <summary>Must match the overlay window's Title exactly.</summary>
+    public const string OverlayTitle = "PoE2 Stash Pricer overlay";
 
     private static readonly string[] Rules =
     {
@@ -63,7 +70,8 @@ internal static class HyprlandRules
         int applied = 0;
         foreach (string rule in Rules)
         {
-            string? answer = Send(path, "eval hl.window_rule({ match = { class = \"" + WindowClass + "\" }, " + rule + " })");
+            string match = "{ class = \"" + WindowClass + "\", title = \"" + OverlayTitle + "\" }";
+            string? answer = Send(path, "eval hl.window_rule({ match = " + match + ", " + rule + " })");
             if (answer == "ok") applied++;
             else Log.Write("Hyprland refused the overlay rule '" + rule + "': " + (answer ?? "no answer"));
         }

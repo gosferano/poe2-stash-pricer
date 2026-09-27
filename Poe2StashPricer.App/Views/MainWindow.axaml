@@ -1,10 +1,146 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Poe2StashPricer.App.ViewModels"
         x:Class="Poe2StashPricer.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
         Title="PoE2 Stash Pricer"
-        Width="720" Height="480">
+        Width="1000" Height="700" MinWidth="820" MinHeight="520"
+        Background="#14140F">
 
-  <TextBlock Margin="16" VerticalAlignment="Center" HorizontalAlignment="Center"
-             Text="PoE2 Stash Pricer" />
+  <Window.Resources>
+    <vm:BoolInk x:Key="OnScreenInk" WhenTrue="#F2D98C" WhenFalse="#E8E3D4" />
+    <vm:BoolInk x:Key="PricedInk"   WhenTrue="#E8E3D4" WhenFalse="#6E6A5C" />
+    <vm:BoolInk x:Key="UnreadInk"   WhenTrue="#D9584A" WhenFalse="#E8E3D4" />
+  </Window.Resources>
 
+  <Window.Styles>
+    <Style Selector="TextBlock.caption">
+      <Setter Property="Foreground" Value="#8A8574" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="#1C1B15" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="14" />
+      <Setter Property="BorderBrush" Value="#2A2820" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="6,5" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="ListBox">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="14" ColumnDefinitions="*">
+
+    <!-- Stash total, league and currency -->
+    <Border Classes="card" Grid.Row="0" Margin="0,0,0,12">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="0">
+          <TextBlock Classes="caption" Text="Total stash value" />
+          <TextBlock Text="{Binding GrandTotal}" FontSize="26" FontWeight="SemiBold" Foreground="#E3B341" />
+          <TextBlock Text="{Binding GrandSubtitle}" Foreground="#8A8574" FontSize="12" Margin="2,2,0,0" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+          <StackPanel Margin="0,0,10,0">
+            <TextBlock Classes="caption" Text="League" />
+            <ComboBox ItemsSource="{Binding Leagues}" SelectedItem="{Binding SelectedLeague}" MinWidth="190" />
+          </StackPanel>
+          <StackPanel Margin="0,0,10,0">
+            <TextBlock Classes="caption" Text="Show in" />
+            <ComboBox ItemsSource="{Binding Currencies}" SelectedItem="{Binding SelectedCurrency}" MinWidth="110" />
+          </StackPanel>
+          <Button Content="Refresh prices" Command="{Binding RefreshPricesCommand}" VerticalAlignment="Bottom" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Tabs and their items -->
+    <Grid Grid.Row="1" ColumnDefinitions="380,*">
+      <Border Classes="card" Grid.Column="0" Margin="0,0,12,0">
+        <DockPanel>
+          <TextBlock Classes="caption" Text="Tabs" DockPanel.Dock="Top" />
+          <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <Button Content="Rename" Click="OnRename" IsEnabled="{Binding CanEdit}" />
+            <Button Content="Delete" Command="{Binding DeleteTabCommand}" IsEnabled="{Binding CanEdit}" />
+            <Button Content="Delete all" Click="OnDeleteAll" IsEnabled="{Binding CanEdit}" Foreground="#D9584A" />
+          </StackPanel>
+          <Grid ColumnDefinitions="*,95,130" DockPanel.Dock="Top" Margin="6,0,18,4">
+            <TextBlock Grid.Column="0" Classes="caption" Text="Tab" />
+            <TextBlock Grid.Column="1" Classes="caption" Text="Value" TextAlignment="Right" Margin="0,0,10,4" />
+            <TextBlock Grid.Column="2" Classes="caption" Text="Status" />
+          </Grid>
+          <ListBox ItemsSource="{Binding Tabs}" SelectedItem="{Binding SelectedTab}" Background="Transparent">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:TabRowVm">
+                <Grid ColumnDefinitions="*,95,130">
+                  <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                             Foreground="{Binding OnScreen, Converter={StaticResource OnScreenInk}}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Value}" TextAlignment="Right" Foreground="#E3B341" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="2" Text="{Binding Status}" Foreground="#8A8574" FontSize="12" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+
+      <Border Classes="card" Grid.Column="1">
+        <DockPanel>
+          <TextBlock Classes="caption" Text="Items" DockPanel.Dock="Top" />
+          <TextBlock Text="{Binding ItemsHeader}" DockPanel.Dock="Top" FontSize="14" FontWeight="SemiBold"
+                     Foreground="#E8E3D4" Margin="0,0,0,2" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding ItemsNote}" DockPanel.Dock="Top" Foreground="#E3B341" FontSize="12"
+                     Margin="0,0,0,8" TextWrapping="Wrap"
+                     IsVisible="{Binding ItemsNote, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <Grid ColumnDefinitions="*,70,100,110,110" DockPanel.Dock="Top" Margin="6,0,18,4">
+            <TextBlock Grid.Column="0" Classes="caption" Text="Item" />
+            <TextBlock Grid.Column="1" Classes="caption" Text="Qty" TextAlignment="Right" Margin="0,0,10,4" />
+            <TextBlock Grid.Column="2" Classes="caption" Text="Unit price" TextAlignment="Right" Margin="0,0,10,4" />
+            <TextBlock Grid.Column="3" Classes="caption" Text="Total" TextAlignment="Right" Margin="0,0,10,4" />
+            <TextBlock Grid.Column="4" Classes="caption" Text="Category" />
+          </Grid>
+          <ListBox ItemsSource="{Binding Items}" Background="Transparent">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ItemRowVm">
+                <Grid ColumnDefinitions="*,70,100,110,110">
+                  <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                             Foreground="{Binding Priced, Converter={StaticResource PricedInk}}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Qty}" TextAlignment="Right" Margin="0,0,10,0"
+                             Foreground="{Binding CountUnread, Converter={StaticResource UnreadInk}}" />
+                  <TextBlock Grid.Column="2" Text="{Binding Unit}" TextAlignment="Right" Foreground="#8A8574" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="3" Text="{Binding Total}" TextAlignment="Right" Foreground="#E3B341" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="4" Text="{Binding Category}" Foreground="#6E6A5C" FontSize="12" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+    </Grid>
+
+    <!-- Actions -->
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+      <Button Content="{Binding ScanButtonText}" Command="{Binding ScanCommand}" />
+      <Button Content="Overlay" Command="{Binding ToggleOverlayCommand}" />
+      <Button Content="Preview" Command="{Binding PreviewCommand}" IsEnabled="{Binding CanEdit}" />
+      <CheckBox Content="Price on hover" IsChecked="{Binding HoverPrices}" Margin="8,0,0,0"
+                ToolTip.Tip="The app doesn't move the mouse: rest it on an item and its price shows." />
+    </StackPanel>
+
+    <!-- Status -->
+    <Grid Grid.Row="3" ColumnDefinitions="Auto,*" Margin="0,10,0,0">
+      <ProgressBar Grid.Column="0" Width="150" Height="6" VerticalAlignment="Center" Margin="0,0,10,0"
+                   Maximum="{Binding ProgressMax}" Value="{Binding Progress}" IsVisible="{Binding Busy}" />
+      <TextBlock Grid.Column="1" Text="{Binding Status}" Foreground="#8A8574" TextWrapping="Wrap" />
+    </Grid>
+  </Grid>
 </Window>
