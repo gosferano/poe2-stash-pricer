@@ -91,6 +91,12 @@ internal static class HyprlandRules
         string? path = SocketPath();
         if (path == null || !File.Exists(path)) return;
 
+        // A copy that was killed rather than closed leaves its bindings behind, and binding again would
+        // stack another on top: one press would then arrive several times, and the second arrival stops the
+        // scan the first one started. So the keys are taken back first, however many are on them.
+        Release(path, scanKey);
+        Release(path, overlayKey);
+
         string? portalAppId = usePortal ? FindPortalAppId(path) : null;
         if (portalAppId != null)
         {
@@ -120,8 +126,14 @@ internal static class HyprlandRules
         if (!IsHyprland) return;
         string? path = SocketPath();
         if (path == null || !File.Exists(path)) return;
-        foreach (string key in new[] { scanKey, overlayKey })
-            if (!string.IsNullOrEmpty(key)) Send(path, "eval hl.unbind(\"" + key + "\")");
+        Release(path, scanKey);
+        Release(path, overlayKey);
+    }
+
+    /// <summary>Takes a key back. One call clears every binding on it, however many have piled up.</summary>
+    private static void Release(string socket, string key)
+    {
+        if (!string.IsNullOrEmpty(key)) Send(socket, "eval hl.unbind(\"" + key + "\")");
     }
 
     /// <summary>
@@ -168,9 +180,13 @@ internal static class HyprlandRules
             {
                 socket.Connect(new UnixDomainSocketEndPoint(path));
                 socket.Send(Encoding.UTF8.GetBytes(command));
-                byte[] buffer = new byte[4096];
-                int n = socket.Receive(buffer);
-                return Encoding.UTF8.GetString(buffer, 0, n).Trim();
+                using (MemoryStream answer = new MemoryStream())
+                {
+                    byte[] buffer = new byte[8192];
+                    int n;
+                    while ((n = socket.Receive(buffer)) > 0) answer.Write(buffer, 0, n);
+                    return Encoding.UTF8.GetString(answer.ToArray()).Trim();
+                }
             }
         }
         catch (Exception ex)

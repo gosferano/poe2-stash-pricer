@@ -141,7 +141,13 @@ that is System Settings; on Hyprland the app asks the compositor to do it (`hl.d
 nothing to set up. Where neither is possible the key can be bound to `--scan`, which talks to the running
 copy over a socket in `$XDG_RUNTIME_DIR`.
 
-One trap: the name the portal files the shortcuts under is not the app's to choose. It is worked out from
+Two traps. The first is that a key binding made through the compositor outlives a copy of the app that was
+killed rather than closed, and binding again stacks another on top. One press then arrives twice, and since
+pressing the scan key during a scan is how a scan is stopped, the second arrival cancelled the scan the
+first had just started - which looked exactly like the key not working. The keys are now taken back before
+they are bound.
+
+The second is that the name the portal files the shortcuts under is not the app's to choose. It is worked out from
 the process that registered them, so the same binary launched from a terminal, a desktop entry or another
 program can be filed under different names. The app therefore asks the compositor which shortcuts it knows
 and picks out the one carrying its own description, rather than assuming a name.
