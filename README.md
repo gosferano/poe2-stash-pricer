@@ -38,10 +38,17 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 dotnet build
 ```
 
-## Trying it
+## Running it
 
-There is no user interface yet. The platform layer can be driven from the command line: open a stash tab,
-leave the game in front, and run
+```bash
+dotnet run --project Poe2StashPricer.App
+```
+
+A window lists every tab you have scanned, what each is worth and what is in it, with the prices drawn over
+the game as well. `--overlay` leaves the window out and shows only the prices.
+
+The command line still drives the platform layer directly for testing: open a stash tab, leave the game in
+front, and run
 
 ```bash
 dotnet run --project Poe2StashPricer.App -- --debug-scan --prices
