@@ -79,6 +79,24 @@ internal static class DebugWatch
             if (seen.StashVisible && seen.Tab == null) line += "  (frame colour "
                 + (seen.Loc.FrameColor == null ? "none" : string.Join(",", Array.ConvertAll(seen.Loc.FrameColor, c => ((int)c).ToString()))) + ")";
             Report(clock, ref lastLine, line);
+
+            // Not recognised: say how close each layout came, so a near miss is told from a different tab.
+            if (seen.StashVisible && seen.Tab == null && seen.Full != null)
+            {
+                Poe2StashPricer.Detection.PixelBuffer area = seen.Full.Crop(seen.Loc.Region);
+                System.Collections.Generic.List<double> sig = TabLibrary.Signature(area), mask = TabLibrary.ItemMask(area);
+                System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, double>> ranked =
+                    new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, double>>();
+                foreach (TabProfile tp in model.KnownTabs)
+                    ranked.Add(new System.Collections.Generic.KeyValuePair<string, double>(tp.Key,
+                        TabLibrary.Distance(sig, mask, tp.Signature, tp.ItemMask)));
+                ranked.Sort((x, y) => x.Value.CompareTo(y.Value));
+                string top = "";
+                for (int i = 0; i < 3 && i < ranked.Count; i++)
+                    top += (i > 0 ? ", " : "") + ranked[i].Key + " " + ranked[i].Value.ToString("0.000");
+                Console.WriteLine(Stamp(clock) + "    closest layouts: " + top
+                                  + "   (a built-in needs <= 0.15 and a 0.05 lead)");
+            }
         }
         return 0;
     }

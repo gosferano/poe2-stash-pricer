@@ -149,6 +149,11 @@ Recorded here so they are not mistaken for porting bugs when comparing with upst
   tab over several frames, so the first capture after it returns to the front can be too dark to match, and
   upstream's behaviour there made the overlay blink off and on at every alt-tab. Three looks in a row must
   fail, which is the same idea as the retries upstream already uses in `RecheckFrame`.
+- `TabLibrary.Identify` accepts a built-in layout that is further away than upstream's 0.15 when it is far
+  ahead of every other layout (0.30 with a 0.25 lead). Upstream measured its limits at 1080p, where the same
+  tab scores 0.00 to 0.09; at 3440x1440 the Currency tab scores 0.15 to 0.17 and so was rejected outright,
+  even while leading the runner-up by 0.40. The look-alikes upstream warns about are 0.10 and 0.16 apart, so
+  a lead of 0.25 cannot be one of them.
 - Upstream refused a poe.ninja answer over 64 MB while reading it into a string. There is no such cap here: the
   answer is parsed straight off the response stream, and `HttpClient.Timeout` bounds how long that can take.
 - The poe.ninja user agent reports this port's name and version, not upstream's.

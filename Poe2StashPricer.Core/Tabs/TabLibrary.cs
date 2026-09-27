@@ -285,6 +285,11 @@ public static class TabLibrary
         double second;
         TabProfile layout = Closest(pb, null, profiles.Where(p => p.BuiltIn), out difference, out second);
         if (layout != null && difference <= BuiltInMatch && second - difference >= BuiltInMargin) return layout;
+        // Those limits were measured at 1080p. On a taller or wider screen the same tab lands further away
+        // (0.15 to 0.17 for Currency at 3440x1440), which put it just outside them. A match this far ahead
+        // of every other layout is still that tab: the look-alikes upstream warned about sit 0.10 (Runes /
+        // Kalguuran Runes) and 0.16 (Trials / Wombgifts) apart, so a lead this size cannot be one of them.
+        if (layout != null && difference <= BuiltInFarMatch && second - difference >= BuiltInFarMargin) return layout;
 
         // Tabs learned on this PC. Only a clear match: a merely similar picture is not enough, the Runes
         // sub-tabs look alike (0.10 to 0.27 apart) and Kalguuran Runes even hold the same kind of items.
@@ -293,6 +298,7 @@ public static class TabLibrary
     }
 
     private const double BuiltInMatch = 0.15, BuiltInMargin = 0.05;
+    private const double BuiltInFarMatch = 0.30, BuiltInFarMargin = 0.25;
 
     /// <summary>
     /// The saved tab that looks similar but not the same (after many items changed, say). Whether it is
