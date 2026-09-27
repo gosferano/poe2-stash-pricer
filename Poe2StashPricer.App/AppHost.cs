@@ -40,14 +40,17 @@ internal static class AppHost
     /// <summary>Set from --overlay: the prices over the game, with no window of our own.</summary>
     public static bool OverlayOnly { get; set; }
 
-    /// <summary>Brings the window forward, for when a second copy starts and bows out.</summary>
+    /// <summary>
+    /// Brings the window forward, for when a second copy starts and bows out. Each step is tried on its
+    /// own: a compositor may refuse to raise or focus a window, and being refused is not worth dying over.
+    /// </summary>
     private static void Raise(IClassicDesktopStyleApplicationLifetime desktop)
     {
         Window? window = desktop.MainWindow;
         if (window == null) return;
-        window.Show();
-        window.WindowState = WindowState.Normal;
-        window.Activate();
+        try { window.Show(); } catch (Exception ex) { Log.Write("the window would not show: " + ex.Message); }
+        try { window.WindowState = WindowState.Normal; } catch (Exception ex) { Log.Write("the window would not restore: " + ex.Message); }
+        try { window.Activate(); } catch (Exception ex) { Log.Write("the window would not take focus: " + ex.Message); }
     }
 
     public static void Attach(IClassicDesktopStyleApplicationLifetime desktop)
@@ -90,9 +93,15 @@ internal static class AppHost
         _control = new ControlSocket();
         _control.Command += command => Dispatcher.UIThread.Post(() =>
         {
-            if (command == "scan") _session?.Scan();
-            else if (command == "overlay") _session?.ToggleOverlay();
-            else if (command == "show") Raise(desktop);
+            // Whatever a command asks for, it must not be able to bring the app down: this runs on the
+            // interface thread, where an exception nobody catches ends the process.
+            try
+            {
+                if (command == "scan") _session?.Scan();
+                else if (command == "overlay") _session?.ToggleOverlay();
+                else if (command == "show") Raise(desktop);
+            }
+            catch (Exception ex) { Log.Write("the command '" + command + "' failed: " + ex); }
         });
         _control.Listen();
 
