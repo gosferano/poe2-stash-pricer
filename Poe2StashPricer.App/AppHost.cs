@@ -88,7 +88,12 @@ internal static class AppHost
             desktop.MainWindow.Show();
         }
 
-        desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
+        // Closing the window ends the app. There is no tray icon, so a copy left running without one
+        // would be invisible, would keep the hotkeys to itself and would answer the launcher with a
+        // window it can no longer show. --overlay has no window of its own and runs until interrupted.
+        desktop.ShutdownMode = OverlayOnly
+            ? Avalonia.Controls.ShutdownMode.OnExplicitShutdown
+            : Avalonia.Controls.ShutdownMode.OnMainWindowClose;
         // A key bound in the desktop runs "--scan", which arrives here.
         _control = new ControlSocket();
         _control.Command += command => Dispatcher.UIThread.Post(() =>
