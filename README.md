@@ -66,10 +66,10 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 ## Building
 
 ```bash
-dotnet build
+dotnet build src/Poe2StashPricer.slnx
 ```
 
-Package versions all live in [Directory.Packages.props](Directory.Packages.props); a project names the
+Package versions all live in [src/Directory.Packages.props](src/Directory.Packages.props); a project names the
 package it wants and nothing else.
 
 For a standalone binary like the released one:

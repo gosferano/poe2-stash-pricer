@@ -1,6 +1,6 @@
 name: release
 
-# Manual: release whatever version Directory.Build.props currently names, if it has no tag yet.
+# Manual: release whatever version src/Directory.Build.props currently names, if it has no tag yet.
 #
 # A cheap "detect" job reads the version (just grep + git, no SDK) and gates the heavy "release" job, so a
 # run that would release nothing never installs the toolchain.
@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -n1 | tr -d '[:space:]')
+          version=$(grep -oP '(?<=<Version>)[^<]+' src/Directory.Build.props | head -n1 | tr -d '[:space:]')
           if git rev-parse "v$version" >/dev/null 2>&1; then new=false; else new=true; fi
           {
             echo "version=$version"
@@ -55,7 +55,7 @@ jobs:
 
       - name: Build and test
         shell: bash
-        run: dotnet build -c Release
+        run: dotnet build src/Poe2StashPricer.slnx -c Release
 
       # One self-contained file: nothing to install to run it. How it is built (trimmed, compressed) is
       # settled in the csproj.

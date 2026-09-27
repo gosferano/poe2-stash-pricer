@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="src/Poe2StashPricer.Core/Poe2StashPricer.Core.csproj" />
-  <Project Path="src/Poe2StashPricer.App/Poe2StashPricer.App.csproj" />
-</Solution>
