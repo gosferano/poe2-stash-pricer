@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Product>PoE2 Stash Pricer</Product>
     <Authors>gosferano</Authors>
     <Copyright>Copyright (c) 2026 tugayilik, Copyright (c) 2026 gosferano</Copyright>
