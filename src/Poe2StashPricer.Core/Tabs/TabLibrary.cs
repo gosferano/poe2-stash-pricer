@@ -281,7 +281,8 @@ public static class TabLibrary
         // The built-in layouts first. They were taken on another PC with other items, so they get a looser
         // limit, but must also be clearly closer than the next built-in: measured 0.00-0.09 for the same tab
         // (other items, 1080p), while the closest look-alikes are 0.10 (Runes / Kalguuran Runes) and 0.16
-        // (Trials / Wombgifts) apart.
+        // (Trials / Wombgifts) apart. The limit is upstream's 0.15 widened a little: Idols scores 0.164 at
+        // 3440x1440 and led by 0.08, so it cleared the margin and missed the cap by 0.014.
         double second;
         TabProfile layout = Closest(pb, null, profiles.Where(p => p.BuiltIn), out difference, out second);
         if (layout != null && difference <= BuiltInMatch && second - difference >= BuiltInMargin) return layout;
@@ -290,7 +291,9 @@ public static class TabLibrary
         // not carry across resolutions, but how far ahead of the others it is does - Currency led by 0.40
         // and Essence by 0.48, while the look-alikes upstream warns about (Runes / Kalguuran Runes 0.10
         // apart, Trials / Wombgifts 0.16) never separate like that. So a layout twice as close as the next
-        // is that tab, whatever the absolute figure says.
+        // is that tab, whatever the absolute figure says. A tab with a near sibling never gets that far
+        // ahead - Idols leads the other Runes-family tabs by half, not double - which is what the margin
+        // rule above is for.
         if (layout != null && difference <= BuiltInFarMatch && second >= difference * BuiltInLead) return layout;
 
         // Tabs learned on this PC. Only a clear match: a merely similar picture is not enough, the Runes
@@ -299,7 +302,7 @@ public static class TabLibrary
         return difference <= SureMatch ? best : null;
     }
 
-    private const double BuiltInMatch = 0.15, BuiltInMargin = 0.05;
+    private const double BuiltInMatch = 0.20, BuiltInMargin = 0.05;
     private const double BuiltInFarMatch = 0.50, BuiltInLead = 2.0;
 
     /// <summary>

@@ -95,7 +95,7 @@ internal static class DebugWatch
                 for (int i = 0; i < 3 && i < ranked.Count; i++)
                     top += (i > 0 ? ", " : "") + ranked[i].Key + " " + ranked[i].Value.ToString("0.000");
                 Console.WriteLine(Stamp(clock) + "    closest layouts: " + top
-                                  + "   (a built-in needs <= 0.15 and a 0.05 lead)");
+                                  + "   (a built-in needs <= 0.20 with a 0.05 lead, or <= 0.50 at twice the next one's distance)");
             }
         }
         return 0;
