@@ -167,11 +167,15 @@ Recorded here so they are not mistaken for porting bugs when comparing with upst
   tab over several frames, so the first capture after it returns to the front can be too dark to match, and
   upstream's behaviour there made the overlay blink off and on at every alt-tab. Three looks in a row must
   fail, which is the same idea as the retries upstream already uses in `RecheckFrame`.
-- `TabLibrary.Identify` accepts a built-in layout that is further away than upstream's 0.15 when it is far
-  ahead of every other layout (0.30 with a 0.25 lead). Upstream measured its limits at 1080p, where the same
-  tab scores 0.00 to 0.09; at 3440x1440 the Currency tab scores 0.15 to 0.17 and so was rejected outright,
-  even while leading the runner-up by 0.40. The look-alikes upstream warns about are 0.10 and 0.16 apart, so
-  a lead of 0.25 cannot be one of them.
+- `TabLibrary.Identify` accepts a built-in layout twice as close as the next one, even past upstream's 0.15
+  limit (up to 0.5). Upstream measured that limit at 1080p, where the same tab scores 0.00 to 0.09. On other
+  screens it does not hold: at 3440x1440 Currency scores 0.17 and Essence 0.31, and both were rejected
+  outright while leading the runner-up by 0.40 and 0.48. How far off a picture is does not carry across
+  resolutions; how far ahead of the others it is does.
+
+  The ratio is the conservative part. In the look-alike families the runner-up is a sibling layout only 0.10
+  (Runes / Kalguuran Runes) to 0.24 apart, so it is never twice as far, and there the rule declines to match
+  rather than matching the wrong one - which leaves the tab unrecognised, the safe way to be wrong.
 - Upstream refused a poe.ninja answer over 64 MB while reading it into a string. There is no such cap here: the
   answer is parsed straight off the response stream, and `HttpClient.Timeout` bounds how long that can take.
 - The poe.ninja user agent reports this port's name and version, not upstream's.

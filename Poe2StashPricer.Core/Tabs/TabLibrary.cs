@@ -285,11 +285,13 @@ public static class TabLibrary
         double second;
         TabProfile layout = Closest(pb, null, profiles.Where(p => p.BuiltIn), out difference, out second);
         if (layout != null && difference <= BuiltInMatch && second - difference >= BuiltInMargin) return layout;
-        // Those limits were measured at 1080p. On a taller or wider screen the same tab lands further away
-        // (0.15 to 0.17 for Currency at 3440x1440), which put it just outside them. A match this far ahead
-        // of every other layout is still that tab: the look-alikes upstream warned about sit 0.10 (Runes /
-        // Kalguuran Runes) and 0.16 (Trials / Wombgifts) apart, so a lead this size cannot be one of them.
-        if (layout != null && difference <= BuiltInFarMatch && second - difference >= BuiltInFarMargin) return layout;
+        // Those limits were measured at 1080p. On another screen the same tab lands further off: Currency
+        // scores 0.17 at 3440x1440 and Essence 0.31, both well outside them. How far off a picture is does
+        // not carry across resolutions, but how far ahead of the others it is does - Currency led by 0.40
+        // and Essence by 0.48, while the look-alikes upstream warns about (Runes / Kalguuran Runes 0.10
+        // apart, Trials / Wombgifts 0.16) never separate like that. So a layout twice as close as the next
+        // is that tab, whatever the absolute figure says.
+        if (layout != null && difference <= BuiltInFarMatch && second >= difference * BuiltInLead) return layout;
 
         // Tabs learned on this PC. Only a clear match: a merely similar picture is not enough, the Runes
         // sub-tabs look alike (0.10 to 0.27 apart) and Kalguuran Runes even hold the same kind of items.
@@ -298,7 +300,7 @@ public static class TabLibrary
     }
 
     private const double BuiltInMatch = 0.15, BuiltInMargin = 0.05;
-    private const double BuiltInFarMatch = 0.30, BuiltInFarMargin = 0.25;
+    private const double BuiltInFarMatch = 0.50, BuiltInLead = 2.0;
 
     /// <summary>
     /// The saved tab that looks similar but not the same (after many items changed, say). Whether it is
