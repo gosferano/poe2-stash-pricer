@@ -28,3 +28,16 @@ hl.window_rule({
     border_size = 0,
     rounding = 0,
 })
+
+-- A hotkey while the game has focus.
+--
+-- A compositor will not hand a key to a window that is not focused, so the app cannot listen for one
+-- itself. Binding the key to a command works on any desktop: the command tells the running copy what to
+-- do through a socket in $XDG_RUNTIME_DIR.
+--
+-- Change the path to wherever the app lives.
+
+local pricer = "/home/gosferano/Projects/poe2-stash-pricer/Poe2StashPricer.App/bin/Debug/net10.0/Poe2StashPricer.App"
+
+hl.bind("F7", hl.dsp.exec_cmd(pricer .. " --scan"))
+hl.bind("F8", hl.dsp.exec_cmd(pricer .. " --toggle-overlay"))

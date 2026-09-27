@@ -9,6 +9,12 @@ internal static class Program
     public static int Main(string[] args)
     {
         // Before there is a UI, the platform layer is driven from the command line.
+        // Talking to a copy that is already running: what a key binding invokes.
+        if (Array.IndexOf(args, "--scan") >= 0 && Array.IndexOf(args, "--debug-session") < 0)
+            return Platform.Linux.ControlSocket.Send("scan") ? 0 : Nobody("--scan");
+        if (Array.IndexOf(args, "--toggle-overlay") >= 0)
+            return Platform.Linux.ControlSocket.Send("overlay") ? 0 : Nobody("--toggle-overlay");
+
         if (Array.IndexOf(args, "--debug-scan") >= 0)
             return DebugScan.Run(Array.IndexOf(args, "--prices") >= 0,
                                  Array.IndexOf(args, "--hold") >= 0 ? 15 : 0);
@@ -37,6 +43,12 @@ internal static class Program
         }
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
+    }
+
+    private static int Nobody(string what)
+    {
+        Console.Error.WriteLine(what + ": no running PoE2 Stash Pricer to tell. Start it with --overlay first.");
+        return 1;
     }
 
     // Avalonia configuration; also used by the visual designer.

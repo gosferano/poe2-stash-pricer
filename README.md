@@ -71,7 +71,22 @@ put the rules in your own config instead - [packaging/hyprland.lua](packaging/hy
 On any other compositor none of this runs, and the overlay looks however that compositor draws a
 transparent window.
 
-There is no hotkey yet, so a scan still has to be started from the command line.
+### Scanning with a key
+
+A compositor will not give a key to a window that is not focused, so the app cannot listen for a hotkey
+while you play. Instead it listens on a socket, and the desktop's own key bindings tell it what to do:
+
+```bash
+dotnet run --project Poe2StashPricer.App -- --scan
+```
+
+That tells a running copy to scan the open tab; `--toggle-overlay` shows and hides the prices. Bind those to
+keys in your desktop's settings - [packaging/hyprland.lua](packaging/hyprland.lua) has F7 and F8 for
+Hyprland. (The xdg-desktop-portal GlobalShortcuts interface would avoid the binding step and is the better
+answer later.)
+
+A scan is a snapshot: the prices stay where the items were when you scanned. Move things about and press the
+key again. Only tabs you have scanned show anything - each tab needs its own scan.
 
 The scan borrows your clipboard, because copying items is how the game is read, and puts it back when it is
 done. A clipboard belongs to a running program, though, so the text is restored only for as long as the app

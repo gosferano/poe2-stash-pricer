@@ -18,6 +18,7 @@ internal static class OverlayApp
     private static LinuxPlatform? _platform;
     private static PricerSession? _session;
     private static OverlayWindow? _overlay;
+    private static ControlSocket? _control;
 
     public static void Attach(IClassicDesktopStyleApplicationLifetime desktop)
     {
@@ -43,14 +44,24 @@ internal static class OverlayApp
         _session.StatusChanged += text => Console.WriteLine("status: " + text);
 
         desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
+        // A key bound in the desktop runs "--scan", which arrives here.
+        _control = new ControlSocket();
+        _control.Command += command => Dispatcher.UIThread.Post(() =>
+        {
+            if (command == "scan") _session?.Scan();
+            else if (command == "overlay") _session?.ToggleOverlay();
+        });
+        _control.Listen();
+
         desktop.Exit += (s, e) =>
         {
+            _control?.Dispose();
             _session?.Dispose();
             _platform?.Dispose();
         };
 
         Console.WriteLine("Overlay running. Open a stash tab in the game; prices of scanned tabs appear over it.");
-        Console.WriteLine("Ctrl+C here to stop.");
+        Console.WriteLine("Bind a key to \"poe2-stash-pricer --scan\" to scan the open tab; Ctrl+C here to stop.");
         _session.Start();
     }
 
