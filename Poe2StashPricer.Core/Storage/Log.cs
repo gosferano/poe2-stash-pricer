@@ -10,7 +10,7 @@ namespace Poe2StashPricer.Storage;
 public static class Log
 {
     private const long MaxSize = 256 * 1024;
-    private static readonly object sync = new object();
+    private static readonly object _sync = new object();
 
     public static string FilePath { get { return Path.Combine(AppPaths.Dir, "log.txt"); } }
 
@@ -18,7 +18,7 @@ public static class Log
     {
         try
         {
-            lock (sync)
+            lock (_sync)
             {
                 Directory.CreateDirectory(AppPaths.Dir);
                 FileInfo fi = new FileInfo(FilePath);
@@ -28,7 +28,7 @@ public static class Log
                     string all = File.ReadAllText(FilePath);
                     File.WriteAllText(FilePath, all.Substring(all.Length / 2));
                 }
-                File.AppendAllText(FilePath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  " + message + Environment.NewLine);
+                File.AppendAllText(FilePath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + "  " + message + Environment.NewLine);
             }
         }
         catch { }
