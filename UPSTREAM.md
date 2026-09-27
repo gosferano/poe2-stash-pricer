@@ -119,6 +119,14 @@ protocol. There the user's clipboard cannot be put back, and the app says so.
 A selection belongs to a running program on Wayland just as on X: when the app exits, what it put on the
 clipboard goes with it unless a clipboard manager has taken a copy. That is normal for every application.
 
+### The overlay is an ordinary X11 window
+
+Drawing over the game was the part with two possible answers: an Avalonia window shaped to take no clicks,
+or a native layer-shell surface rendered by hand. The first works, measured on Hyprland with the game in
+front: it stays above the game, takes no focus from it, passes every click through (an empty `ShapeInput`
+region), and with the compositor rules below leaves the picture behind it untouched. So the layer-shell
+route is not needed, and the app keeps one renderer instead of two.
+
 ### Asking the compositor to leave the overlay alone
 
 The overlay has to sit exactly over the stash, which means the compositor must not place it. A generic rule
